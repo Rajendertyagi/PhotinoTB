@@ -8,13 +8,12 @@ namespace TbBrowser
         [STAThread]
         static void Main()
         {
-            var app = new PhotinoApp("TB Browser");
+            // Photino v3: Use Photino instance directly
+            var app = new Photino();
 
-            // 1. Create Toolbar Window (The UI Strip)
-            var toolbarWindow = app.CreateMainWindow();
-            toolbarWindow
-                .SetTitle("TB Toolbar")
-                .SetSize(900, 50) // Thin height
+            // 1. Toolbar Window (UI Strip)
+            var toolbar = new PhotinoWindow("TB Toolbar", null)
+                .SetSize(900, 50)
                 .SetUseOsDefaultLocation(false)
                 .SetLeft(200)
                 .SetTop(200)
@@ -22,23 +21,22 @@ namespace TbBrowser
                 .SetMaximizable(false)
                 .Load("wwwroot/toolbar.html");
 
-            // 2. Create Browser Window (The Content)
-            var browserWindow = app.CreateMainWindow();
-            browserWindow
-                .SetTitle("TB Browser")
+            // 2. Browser Window (Content)
+            var browser = new PhotinoWindow("TB Browser", null)
                 .SetSize(900, 600)
                 .SetUseOsDefaultLocation(false)
                 .SetLeft(200)
-                .SetTop(250) // Positioned below toolbar
-                .Load("https://www.bing.com"); // Default page
+                .SetTop(250)
+                .Load("https://www.bing.com");
 
-            // 3. Link Them: Toolbar sends URL -> Browser loads it
-            toolbarWindow.RegisterWebMessageReceivedHandler((sender, message) =>
+            // 3. Link: Toolbar → Browser
+            toolbar.RegisterWebMessageReceivedHandler((sender, url) =>
             {
-                browserWindow.Load(message);
+                browser.Load(url);
             });
 
-            app.Run();
+            // Run the app (blocks until windows close)
+            app.Run(toolbar);
         }
     }
 }
