@@ -1,39 +1,44 @@
 using Photino.NET;
 using System;
+using System.Drawing;
 
 namespace TbBrowser
 {
     class Program
     {
+        static PhotinoWindow? browserWindow;
+
         [STAThread]
         static void Main()
         {
             // 1. Toolbar Window (UI Strip)
             var toolbar = new PhotinoWindow()
                 .SetTitle("TB Toolbar")
-                .SetSize(900, 50)
+                .SetUseOsDefaultSize(false)
+                .SetSize(new Size(900, 50))
                 .SetUseOsDefaultLocation(false)
                 .SetLeft(200)
                 .SetTop(200)
-                .SetResizable(false) // ✅ Fixes: locks size and prevents maximizing
+                .SetResizable(false)
                 .Load("wwwroot/toolbar.html");
 
             // 2. Browser Window (Content)
-            var browser = new PhotinoWindow()
+            browserWindow = new PhotinoWindow(toolbar) // parent = toolbar
                 .SetTitle("TB Browser")
-                .SetSize(900, 600)
+                .SetUseOsDefaultSize(false)
+                .SetSize(new Size(900, 600))
                 .SetUseOsDefaultLocation(false)
                 .SetLeft(200)
                 .SetTop(250)
                 .Load("https://www.bing.com");
 
-            // 3. Link: Toolbar sends URL → Browser loads it
-            toolbar.RegisterWebMessageReceivedHandler((sender, message) =>
+            // 3. Link: Toolbar → Browser
+            toolbar.RegisterWebMessageReceivedHandler((sender, url) =>
             {
-                browser.Load(message);
+                browserWindow?.Load(url);
             });
 
-            // 4. Run the app
+            // 4. Run app
             toolbar.WaitForClose();
         }
     }
