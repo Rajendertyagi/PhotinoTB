@@ -16,9 +16,7 @@
     <button onclick="go()">Go</button>
   </div>
   <script>
-    // ✅ Verified: invoke via global __TAURI__ [[2]]
     const invoke = window.__TAURI__.core.invoke;
-    
     async function go() {
       let u = document.getElementById('url').value;
       if(!u.startsWith('http')) u = 'https://'+u;
