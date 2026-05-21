@@ -21,7 +21,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": ["exe"],
+    "resources": [],
     "icon": []
   }
 }
