@@ -4,13 +4,13 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- Framework-dependent = smaller EXE -->
     <SelfContained>false</SelfContained>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Photino.NET" Version="2.7.0" />
+    <!-- Let NuGet resolve latest v3 -->
+    <PackageReference Include="Photino.NET" Version="3.*" />
   </ItemGroup>
 
   <ItemGroup>
