@@ -21,7 +21,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["exe"],
+    "targets": ["uncompressed"],
     "resources": [],
     "icon": []
   }
