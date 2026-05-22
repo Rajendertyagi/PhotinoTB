@@ -3,10 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:Microsoft.UI.Xaml.Controls"
         Title="TB Browser">
-    
+
     <Grid Background="#202020">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="32"/> <!-- ✅ Fixed height for draggable region -->
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -17,14 +17,14 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            
-            <controls:TabView x:Name="TabView" 
+
+            <controls:TabView x:Name="TabView"
                               AddTabButtonClick="TabView_AddTabButtonClick"
                               TabCloseRequested="TabView_TabCloseRequested"
                               Background="Transparent"
                               BorderThickness="0"
                               Padding="0,0,0,0"/>
-            
+
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="MinBtn" Content="&#xE921;" FontFamily="Segoe MDL2 Assets" Width="46" Height="32" Background="Transparent" BorderThickness="0" Click="MinBtn_Click" Foreground="#CCCCCC"/>
                 <Button x:Name="MaxBtn" Content="&#xE922;" FontFamily="Segoe MDL2 Assets" Width="46" Height="32" Background="Transparent" BorderThickness="0" Click="MaxBtn_Click" Foreground="#CCCCCC"/>
@@ -32,7 +32,7 @@
             </StackPanel>
         </Grid>
 
-        <!-- Address Bar - FIXED ALIGNMENT -->
+        <!-- Address Bar -->
         <Grid Grid.Row="1" Background="#2C2C2C" Padding="8,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -40,28 +40,26 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Navigation Buttons - Vertically Centered -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button x:Name="BackBtn" Content="&#xE72B;" FontFamily="Segoe MDL2 Assets" Click="BackBtn_Click" 
-                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
+                <Button x:Name="BackBtn" Content="&#xE72B;" FontFamily="Segoe MDL2 Assets" Click="BackBtn_Click"
+                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC"
                         Width="28" Height="28" Margin="0,0,2,0"/>
-                <Button x:Name="FwdBtn" Content="&#xE72A;" FontFamily="Segoe MDL2 Assets" Click="FwdBtn_Click" 
-                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
+                <Button x:Name="FwdBtn" Content="&#xE72A;" FontFamily="Segoe MDL2 Assets" Click="FwdBtn_Click"
+                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC"
                         Width="28" Height="28" Margin="0,0,2,0"/>
-                <Button x:Name="RefBtn" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" Click="RefBtn_Click" 
-                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
+                <Button x:Name="RefBtn" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" Click="RefBtn_Click"
+                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC"
                         Width="28" Height="28" Margin="0,0,6,0"/>
             </StackPanel>
 
-            <!-- URL Bar Container - Vertically Centered -->
             <Border Grid.Column="1" Background="#3C3C3C" CornerRadius="20" Padding="12,0" VerticalAlignment="Center" Height="32">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
-                    <TextBox x:Name="UrlBox" 
+
+                    <TextBox x:Name="UrlBox"
                              Background="Transparent"
                              BorderThickness="0"
                              Foreground="#FFFFFF"
@@ -69,18 +67,17 @@
                              FontSize="13"
                              VerticalAlignment="Center"
                              KeyDown="UrlBox_KeyDown"/>
-                    
-                    <Button Grid.Column="1" Content="&#xE734;" FontFamily="Segoe MDL2 Assets" 
-                            Background="Transparent" BorderThickness="0" 
+
+                    <Button Grid.Column="1" Content="&#xE734;" FontFamily="Segoe MDL2 Assets"
+                            Background="Transparent" BorderThickness="0"
                             Foreground="#CCCCCC" Width="28" Height="28"
                             Click="BookmarkBtn_Click"/>
                 </Grid>
             </Border>
 
-            <!-- Menu Button - Vertically Centered -->
-            <Button Grid.Column="2" Content="&#xE712;" FontFamily="Segoe MDL2 Assets" 
-                    Background="Transparent" BorderThickness="0" 
-                    Foreground="#CCCCCC" Width="28" Height="28" 
+            <Button Grid.Column="2" Content="&#xE712;" FontFamily="Segoe MDL2 Assets"
+                    Background="Transparent" BorderThickness="0"
+                    Foreground="#CCCCCC" Width="28" Height="28"
                     VerticalAlignment="Center" Margin="8,0,0,0"/>
         </Grid>
 
