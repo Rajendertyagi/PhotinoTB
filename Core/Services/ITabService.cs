@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TB_Browser.Core.Logging;
 using TB_Browser.Core.Models;
 
 namespace TB_Browser.Core.Services
