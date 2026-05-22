@@ -28,10 +28,8 @@ namespace TB_Browser.Core.Services
         {
             var tab = _tabs.FirstOrDefault(t => t.Id == id);
             if (tab == null) return;
-
             _tabs.Remove(tab);
             TabRemoved?.Invoke(this, tab);
-
             if (_tabs.Count == 0) CreateTab();
             else if (_active?.Id == id) ActivateTab(_tabs.Last().Id);
         }
