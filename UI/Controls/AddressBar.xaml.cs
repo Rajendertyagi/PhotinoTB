@@ -14,7 +14,6 @@ namespace TB_Browser.UI.Controls
             _svc = svc;
             _svc.UrlChanged += (_, u) => UrlBox.Text = u;
         }
-
         private void Back_Click(object s, RoutedEventArgs e) => _svc.GoBack();
         private void Forward_Click(object s, RoutedEventArgs e) => _svc.GoForward();
         private void Reload_Click(object s, RoutedEventArgs e) => _svc.Reload();
