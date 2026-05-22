@@ -16,18 +16,15 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         
-        // Initialize AppWindow for custom controls
-        IntPtr windowHandle = WindowNative.GetWindowHandle(this);
-        WindowId windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
-        appWindow = AppWindow.GetFromWindowId(windowId);
+        IntPtr handle = WindowNative.GetWindowHandle(this);
+        WindowId id = Win32Interop.GetWindowIdFromWindow(handle);
+        appWindow = AppWindow.GetFromWindowId(id);
 
-        // Initialize first tab
         TabView.TabItems.Add(new TabViewItem { Header = "New Tab" });
         TabView.SelectedIndex = 0;
         Navigate("https://www.google.com");
     }
 
-    // --- Tab Logic ---
     private void TabView_AddTabButtonClick(TabView sender, object args)
     {
         var tab = new TabViewItem { Header = "New Tab" };
@@ -48,47 +45,33 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // --- Navigation Logic ---
     private void Navigate(string url)
     {
         if (!string.IsNullOrEmpty(url))
         {
             if (!url.StartsWith("http") && !url.StartsWith("file"))
                 url = "https://" + url;
-            
-            try { WebView.Source = new Uri(url); }
-            catch { }
+            try { WebView.Source = new Uri(url); } catch { }
         }
     }
 
-    // --- Button Events ---
-    private void BackBtn_Click(object sender, RoutedEventArgs e) => _ = WebView.CanGoBack ? WebView.GoBack() : 0;
-    private void FwdBtn_Click(object sender, RoutedEventArgs e) => _ = WebView.CanGoForward ? WebView.GoForward() : 0;
-    private void RefBtn_Click(object sender, RoutedEventArgs e) => WebView.Reload();
-    private void HomeBtn_Click(object sender, RoutedEventArgs e) => Navigate("https://www.google.com");
-    private void GoBtn_Click(object sender, RoutedEventArgs e) => Navigate(UrlBox.Text);
+    private void BackBtn_Click(object sender, RoutedEventArgs e) { if (WebView.CanGoBack) WebView.GoBack(); }
+    private void FwdBtn_Click(object sender, RoutedEventArgs e) { if (WebView.CanGoForward) WebView.GoForward(); }
+    private void RefBtn_Click(object sender, RoutedEventArgs e) { WebView.Reload(); }
+    private void HomeBtn_Click(object sender, RoutedEventArgs e) { Navigate("https://www.google.com"); }
+    private void GoBtn_Click(object sender, RoutedEventArgs e) { Navigate(UrlBox.Text); }
     
     private void UrlBox_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (e.Key == Windows.System.VirtualKey.Enter)
-        {
-            Navigate(UrlBox.Text);
-            UrlBox.SelectAll();
-        }
+        if (e.Key == Windows.System.VirtualKey.Enter) { Navigate(UrlBox.Text); UrlBox.SelectAll(); }
     }
 
     private void WebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
     {
-        if (WebView.Source != null)
-            UrlBox.Text = WebView.Source.AbsoluteUri;
+        if (WebView.Source != null) UrlBox.Text = WebView.Source.AbsoluteUri;
     }
 
-    // --- Custom Window Controls ---
-    private void MinBtn_Click(object sender, RoutedEventArgs e)
-    {
-        appWindow.Minimize();
-    }
-
+    private void MinBtn_Click(object sender, RoutedEventArgs e) => appWindow.Minimize();
     private void MaxBtn_Click(object sender, RoutedEventArgs e)
     {
         if (appWindow.Presenter.Kind == AppWindowPresenterKind.Overlapped)
@@ -96,9 +79,5 @@ public sealed partial class MainWindow : Window
         else
             appWindow.SetPresenter(AppWindowPresenterKind.Overlapped);
     }
-
-    private void CloseBtn_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    private void CloseBtn_Click(object sender, RoutedEventArgs e) => Close();
 }
