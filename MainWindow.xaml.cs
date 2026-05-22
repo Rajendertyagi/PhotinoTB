@@ -1,5 +1,8 @@
+using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using TB_Browser.UI.Controls;
 
 namespace TB_Browser
@@ -21,7 +24,7 @@ namespace TB_Browser
             CommandBindings.Add(new CommandBinding(ApplicationCommands.New, (_, _) => _tabBar?.CreateNewTab()));
             CommandBindings.Add(new CommandBinding(ApplicationCommands.Close, (_, _) => _tabBar?.CloseActive()));
             CommandBindings.Add(new CommandBinding(ApplicationCommands.Properties, (_, _) => _addressBar?.FocusUrl()));
-            CommandBindings.Add(new CommandBinding(ApplicationCommands.Refresh, (_, _) => _browserView?.Reload()));
+            CommandBindings.Add(new CommandBinding(NavigationCommands.Refresh, (_, _) => _browserView?.Reload()));
             CommandBindings.Add(new CommandBinding(NavigationCommands.BrowseBack, (_, _) => _browserView?.GoBack()));
             CommandBindings.Add(new CommandBinding(NavigationCommands.BrowseForward, (_, _) => _browserView?.GoForward()));
 
