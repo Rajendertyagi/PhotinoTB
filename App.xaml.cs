@@ -18,13 +18,14 @@ namespace TB_Browser
                 var browserSvc = new BrowserService();
                 browserSvc.TabService = tabSvc;
 
-                // ✅ FIX: Create the first tab so the UI isn't empty
-                tabSvc.CreateTab(); 
-
+                // ✅ 1. Create UI controls & subscribe to events FIRST
                 var tabBar = new TabBar(tabSvc);
                 var addressBar = new AddressBar(browserSvc);
                 var browserView = new BrowserView(browserSvc);
                 tabSvc.ActiveTabChanged += (s, tab) => browserView.SwitchTo(tab);
+
+                // ✅ 2. Create first tab AFTER UI is listening
+                tabSvc.CreateTab(); 
 
                 var win = new MainWindow(tabBar, addressBar, browserView);
                 win.Show();
