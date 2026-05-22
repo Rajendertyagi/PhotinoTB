@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using TB_Browser.Core.Services;
+using TB_Browser.Core.Models;  // ← Added
 
 namespace TB_Browser.UI.Controls
 {
@@ -14,7 +15,7 @@ namespace TB_Browser.UI.Controls
             _svc.TabAdded += (_, t) => AddTabUI(t);
             _svc.TabRemoved += (_, t) => RemoveTabUI(t.Id);
         }
-        private void AddTabUI(TabModel t)
+        private void AddTabUI(TabModel t)  // ← Now TabModel is recognized
         {
             var btn = new Button { Content = t.Title, Style = (Style)FindResource("TabBtn") };
             btn.Click += (_, _) => _svc.ActivateTab(t.Id);
