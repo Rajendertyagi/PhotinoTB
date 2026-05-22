@@ -17,13 +17,17 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        
+
         appWindow = this.AppWindow;
         if (appWindow != null)
         {
             appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
             appWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
+
+            // ✅ Fix: Explicitly define draggable region so window is draggable immediately
+            appWindow.TitleBar.DraggableRects = new[] { new RectInt32(0, 0, 9999, 32) };
+
             presenter = appWindow.Presenter as OverlappedPresenter;
         }
 
@@ -32,23 +36,23 @@ public sealed partial class MainWindow : Window
 
     private void AddNewTab(string url, string title)
     {
-        var tab = new TabViewItem 
-        { 
+        var tab = new TabViewItem
+        {
             Header = title,
-            IconSource = new FontIconSource 
-            { 
+            IconSource = new FontIconSource
+            {
                 Glyph = "\uE774",
                 FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets")
             }
         };
-        
+
         var tabId = Guid.NewGuid().ToString();
         tab.Tag = tabId;
         _tabUrls[tabId] = url;
-        
+
         TabView.TabItems.Add(tab);
         TabView.SelectedItem = tab;
-        
+
         if (WebView.CoreWebView2 != null)
             WebView.Source = new Uri(url);
     }
@@ -63,9 +67,9 @@ public sealed partial class MainWindow : Window
         var tabId = args.Tab.Tag?.ToString();
         if (!string.IsNullOrEmpty(tabId))
             _tabUrls.Remove(tabId);
-            
+
         sender.TabItems.Remove(args.Tab);
-        
+
         if (sender.TabItems.Count == 0)
             AddNewTab("https://www.google.com", "New Tab");
     }
@@ -73,12 +77,12 @@ public sealed partial class MainWindow : Window
     private void Navigate(string url)
     {
         if (string.IsNullOrEmpty(url)) return;
-        
+
         if (!url.StartsWith("http") && !url.StartsWith("file"))
             url = "https://" + url;
-        
-        try 
-        { 
+
+        try
+        {
             WebView.Source = new Uri(url);
             UpdateCurrentTabUrl(url);
         }
@@ -95,37 +99,37 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void BackBtn_Click(object sender, RoutedEventArgs e) 
-    { 
-        if (WebView.CanGoBack) WebView.GoBack(); 
-    }
-    
-    private void FwdBtn_Click(object sender, RoutedEventArgs e) 
-    { 
-        if (WebView.CanGoForward) WebView.GoForward(); 
-    }
-    
-    private void RefBtn_Click(object sender, RoutedEventArgs e) 
-    { 
-        WebView.Reload(); 
+    private void BackBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (WebView.CanGoBack) WebView.GoBack();
     }
 
-    private void GoBtn_Click(object sender, RoutedEventArgs e) 
-    { 
-        Navigate(UrlBox.Text); 
+    private void FwdBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (WebView.CanGoForward) WebView.GoForward();
     }
-    
+
+    private void RefBtn_Click(object sender, RoutedEventArgs e)
+    {
+        WebView.Reload();
+    }
+
+    private void GoBtn_Click(object sender, RoutedEventArgs e)
+    {
+        Navigate(UrlBox.Text);
+    }
+
     private void UrlBox_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (e.Key == Windows.System.VirtualKey.Enter) 
-        { 
-            Navigate(UrlBox.Text); 
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            Navigate(UrlBox.Text);
         }
     }
 
     private void BookmarkBtn_Click(object sender, RoutedEventArgs e)
     {
-        // Bookmark functionality
+        // Bookmark functionality placeholder
     }
 
     private void WebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
@@ -134,7 +138,7 @@ public sealed partial class MainWindow : Window
         {
             UrlBox.Text = WebView.Source.AbsoluteUri;
             UpdateCurrentTabUrl(WebView.Source.AbsoluteUri);
-            
+
             if (TabView.SelectedItem is TabViewItem tab)
             {
                 tab.Header = WebView.CoreWebView2?.DocumentTitle ?? "New Tab";
