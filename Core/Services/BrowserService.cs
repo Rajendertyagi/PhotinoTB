@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Microsoft.Web.WebView2.Core;
 using TB_Browser.Core.Logging;
 
@@ -43,7 +45,21 @@ namespace TB_Browser.Core.Services
             };
             _webView.FaviconChanged += async (s, e) =>
             {
-                try { var icon = await _webView.GetFaviconAsync(CoreWebView2FaviconImageFormat.Png); FaviconChanged?.Invoke(this, icon); } catch {}
+                try
+                {
+                    using var stream = await _webView.GetFaviconAsync(CoreWebView2FaviconImageFormat.Png);
+                    if (stream != null)
+                    {
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.StreamSource = stream;
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                        bitmap.Freeze();
+                        FaviconChanged?.Invoke(this, bitmap);
+                    }
+                }
+                catch { }
             };
         }
 
@@ -51,6 +67,6 @@ namespace TB_Browser.Core.Services
         public void GoBack() => _webView?.GoBack();
         public void GoForward() => _webView?.GoForward();
         public void Reload() => _webView?.Reload();
-        public void SetZoom(double factor) { if (_webView != null) _webView.ZoomFactor = factor; }
+        public void SetZoom(double factor) { if (_webView != null) _webView.ZoomFactor = Math.Max(0.25, Math.Min(5.0, factor)); }
     }
 }
