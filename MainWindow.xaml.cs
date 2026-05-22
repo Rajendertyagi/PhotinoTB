@@ -70,20 +70,6 @@ public sealed partial class MainWindow : Window
             AddNewTab("https://www.google.com", "New Tab");
     }
 
-    private void TabView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (TabView.SelectedItem is TabViewItem selectedTab)
-        {
-            var tabId = selectedTab.Tag?.ToString();
-            if (!string.IsNullOrEmpty(tabId) && _tabUrls.TryGetValue(tabId, out var url))
-            {
-                UrlBox.Text = url;
-                if (WebView.CoreWebView2 != null)
-                    WebView.Source = new Uri(url);
-            }
-        }
-    }
-
     private void Navigate(string url)
     {
         if (string.IsNullOrEmpty(url)) return;
@@ -139,7 +125,7 @@ public sealed partial class MainWindow : Window
 
     private void BookmarkBtn_Click(object sender, RoutedEventArgs e)
     {
-        // Placeholder for bookmark logic
+        // Bookmark functionality
     }
 
     private void WebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
@@ -149,10 +135,8 @@ public sealed partial class MainWindow : Window
             UrlBox.Text = WebView.Source.AbsoluteUri;
             UpdateCurrentTabUrl(WebView.Source.AbsoluteUri);
             
-            // Update tab title
             if (TabView.SelectedItem is TabViewItem tab)
             {
-                // ✅ Fixed: Access Title via CoreWebView2
                 tab.Header = WebView.CoreWebView2?.DocumentTitle ?? "New Tab";
             }
         }
