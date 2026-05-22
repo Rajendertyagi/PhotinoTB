@@ -86,17 +86,18 @@ public sealed partial class MainWindow : Window
         if (e.Key == Windows.System.VirtualKey.Enter)
         {
             Navigate(UrlBox.Text);
-            UrlBox.SelectAll(); // Select text after navigating
+            UrlBox.SelectAll(); 
         }
     }
 
-    // --- WebView Events ---
-    private void WebView_NavigationCompleted(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
+    // --- WebView Events (Fixed Signature) ---
+    private void WebView_NavigationCompleted(Microsoft.Web.WebView2.Core.CoreWebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs args)
     {
         if (WebView.Source != null)
         {
             UrlBox.Text = WebView.Source.AbsoluteUri;
-            UrlBox.SelectAll(); // Highlight URL for quick editing
+            // Optional: Select all text on navigation finish
+            // UrlBox.SelectAll(); 
         }
     }
 }
