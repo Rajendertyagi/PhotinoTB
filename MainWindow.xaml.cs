@@ -1,4 +1,5 @@
 using System.Windows;
+using TB_Browser.UI.Controls;  // ← Added
 
 namespace TB_Browser
 {
