@@ -12,7 +12,6 @@ namespace TB_Browser.Core.Services
         void GoBack();
         void GoForward();
         void Reload();
-        void SetZoom(double factor);
         event EventHandler<string> UrlChanged;
         event EventHandler<bool> IsLoadingChanged;
         event EventHandler<bool> CanGoBackChanged;
