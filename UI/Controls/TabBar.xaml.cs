@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input; // ✅ Added
+using System.Windows.Input;
 using System.Windows.Media;
 using TB_Browser.Core.Logging;
 using TB_Browser.Core.Services;
@@ -28,24 +28,36 @@ namespace TB_Browser.UI.Controls
             
             var btn = new Button 
             { 
-                Content = t.Title, MinWidth = 80, MaxWidth = 240, Height = 34,
+                Content = t.Title, 
+                MinWidth = 80, 
+                MaxWidth = 240, 
+                Height = 34,
                 Background = (Brush)FindResource("ChromeTabInactiveBg"),
                 Foreground = (Brush)FindResource("ChromeDisabled"),
-                BorderThickness = new Thickness(0), Padding = new Thickness(10,0,0,0),
-                Tag = t.Id, Cursor = Cursors.Hand // ✅ Now works
+                BorderThickness = new Thickness(0), 
+                Padding = new Thickness(10,0,0,0),
+                Tag = t.Id, 
+                Cursor = Cursors.Hand 
             };
             
             var close = new Button 
             { 
-                Content = "✕", Width = 16, Height = 16, Background = Brushes.Transparent, 
-                BorderThickness = new Thickness(0), Foreground = (Brush)FindResource("ChromeDisabled"), 
-                Margin = new Thickness(6,0,4,0), FontSize = 10, Cursor = Cursors.Hand // ✅ Now works
+                Content = "✕", 
+                Width = 16, 
+                Height = 16, 
+                Background = Brushes.Transparent, 
+                BorderThickness = new Thickness(0), 
+                Foreground = (Brush)FindResource("ChromeDisabled"), 
+                Margin = new Thickness(6,0,4,0), 
+                FontSize = 10, 
+                Cursor = Cursors.Hand 
             };
             
             btn.Click += (_, _) => { Logger.Info("TabBar", $"Tab #{t.Id} clicked"); Activate(t.Id); };
             close.Click += (_, _) => { Logger.Info("TabBar", $"Close tab #{t.Id} clicked"); _svc.CloseTab(t.Id); };
             
-            grid.Children.Add(btn); grid.Children.Add(close);
+            grid.Children.Add(btn); 
+            grid.Children.Add(close);
             TabsPanel.Children.Add(grid);
             Activate(t.Id);
         }
@@ -75,12 +87,21 @@ namespace TB_Browser.UI.Controls
         private void NewTab_Click(object s, RoutedEventArgs e) { Logger.Info("TabBar", "New Tab (+) clicked"); _svc.CreateTab(); }
         public void CreateNewTab() => _svc.CreateTab();
         public void CloseActive() => _svc.CloseTab(_svc.ActiveTab?.Id ?? 0);
-        private void Minimize_Click(object s, RoutedEventArgs e) => Window.GetWindow(this)?.SetWindowState(WindowState.Minimized);
+        
+        // ✅ FIXED: Direct property assignment for WindowState
+        private void Minimize_Click(object s, RoutedEventArgs e)
+        {
+            Logger.Info("TabBar", "Minimize clicked");
+            var win = Window.GetWindow(this);
+            if (win != null) win.WindowState = WindowState.Minimized;
+        }
+        
         private void Maximize_Click(object s, RoutedEventArgs e) 
         { 
-            var w = Window.GetWindow(this); 
-            if (w != null) w.WindowState = w.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; 
+            var win = Window.GetWindow(this);
+            if (win != null) win.WindowState = win.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         }
+        
         private void Close_Click(object s, RoutedEventArgs e) { Logger.Info("TabBar", "Close clicked"); Application.Current.Shutdown(); }
     }
 }
