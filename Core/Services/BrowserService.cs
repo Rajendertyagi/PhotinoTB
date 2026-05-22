@@ -7,7 +7,6 @@ namespace TB_Browser.Core.Services
     {
         public ITabService TabService { get; set; } = null!;
         public event EventHandler<string>? UrlChanged;
-
         private CoreWebView2? _webView;
 
         public void SetWebView(CoreWebView2 webView)
@@ -28,7 +27,6 @@ namespace TB_Browser.Core.Services
             if (!url.StartsWith("http")) url = "https://" + url;
             _webView?.Navigate(url);
         }
-
         public void GoBack() => _webView?.GoBack();
         public void GoForward() => _webView?.GoForward();
         public void Reload() => _webView?.Reload();
