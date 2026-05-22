@@ -4,37 +4,31 @@
         xmlns:controls="using:Microsoft.UI.Xaml.Controls"
         Title="TB Browser"
         ExtendsContentIntoTitleBar="True">
-
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid>
         <Grid.RowDefinitions>
-            <!-- Row 0: Tab Bar + Window Controls -->
             <RowDefinition Height="Auto"/>
-            <!-- Row 1: Address Bar -->
             <RowDefinition Height="Auto"/>
-            <!-- Row 2: Web Content -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Tab Bar Area -->
-        <Grid Grid.Row="0" Padding="0,0,0,0">
+        <!-- Top Bar: Tabs + Window Controls -->
+        <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-
-            <!-- Tabs (Left) -->
-            <controls:TabView x:Name="TabView" Grid.Column="0"
-                          AddTabButtonClick="TabView_AddTabButtonClick"
-                          TabCloseRequested="TabView_TabCloseRequested"
-                          TabStripHeight="36"
-                          Background="Transparent">
-            </controls:TabView>
-
-            <!-- Window Controls (Right) -->
+            
+            <controls:TabView x:Name="TabView" 
+                              AddTabButtonClick="TabView_AddTabButtonClick"
+                              TabCloseRequested="TabView_TabCloseRequested"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Padding="4,4,0,0"/>
+            
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                <Button x:Name="MinBtn" Content="–" Width="46" Height="32" Background="Transparent" BorderThickness="0" Click="MinBtn_Click" FontSize="20"/>
-                <Button x:Name="MaxBtn" Content="□" Width="46" Height="32" Background="Transparent" BorderThickness="0" Click="MaxBtn_Click" FontSize="14"/>
-                <Button x:Name="CloseBtn" Content="✕" Width="46" Height="32" Background="Transparent" BorderThickness="0" Click="CloseBtn_Click" FontSize="12"/>
+                <Button x:Name="MinBtn" Content="&#xE921;" FontFamily="Segoe MDL2 Assets" Width="46" Height="32" Background="Transparent" BorderThickness="0" Click="MinBtn_Click"/>
+                <Button x:Name="MaxBtn" Content="&#xE922;" FontFamily="Segoe MDL2 Assets" Width="46" Height="32" Background="Transparent" BorderThickness="0" Click="MaxBtn_Click"/>
+                <Button x:Name="CloseBtn" Content="&#xE8BB;" FontFamily="Segoe MDL2 Assets" Width="46" Height="32" Background="Transparent" BorderThickness="0" Click="CloseBtn_Click"/>
             </StackPanel>
         </Grid>
 
@@ -48,7 +42,6 @@
             <Button Content="Go" Click="GoBtn_Click" Style="{StaticResource AccentButtonStyle}" Margin="4,0"/>
         </StackPanel>
 
-        <!-- WebView -->
         <controls:WebView2 x:Name="WebView" Grid.Row="2" NavigationCompleted="WebView_NavigationCompleted"/>
     </Grid>
 </Window>
