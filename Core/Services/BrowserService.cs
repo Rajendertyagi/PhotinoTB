@@ -24,8 +24,9 @@ namespace TB_Browser.Core.Services
             _webView.NavigationStarting += (s, e) => Logger.Info("Web", $"Start: {e.Uri}");
             _webView.NavigationCompleted += (s, e) =>
             {
-                if (e.IsSuccess) Logger.Info("Web", $"Done: {e.Uri}");
-                else Logger.Warning("Web", $"Fail: {e.Uri} ({e.WebErrorStatus})");
+                string url = _webView.Source; // ✅ Fixed: Use Source, not e.Uri
+                if (e.IsSuccess) Logger.Info("Web", $"Done: {url}");
+                else Logger.Warning("Web", $"Fail: {url} ({e.WebErrorStatus})");
             };
         }
 
