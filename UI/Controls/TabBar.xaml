@@ -7,9 +7,9 @@
             <StackPanel x:Name="TabsPanel" Orientation="Horizontal" Margin="8,4,0,4"/>
         </ScrollViewer>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0">
-            <Button Content="─" Width="44" Style="{StaticResource NavBtn}" Click="Minimize_Click"/>
-            <Button Content="□" Width="44" Style="{StaticResource NavBtn}" Click="Maximize_Click"/>
-            <Button Content="✕" Width="44" Style="{StaticResource NavBtn}" Click="Close_Click"/>
+            <Button Content="─" Width="44" Style="{DynamicResource NavBtn}" Click="Minimize_Click"/>
+            <Button Content="□" Width="44" Style="{DynamicResource NavBtn}" Click="Maximize_Click"/>
+            <Button Content="✕" Width="44" Style="{DynamicResource NavBtn}" Click="Close_Click"/>
         </StackPanel>
     </Grid>
 </UserControl>
