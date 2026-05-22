@@ -32,58 +32,57 @@
             </StackPanel>
         </Grid>
 
-        <!-- Address Bar (Clean & Simple) -->
-        <Border Grid.Row="1" Background="#2C2C2C" Padding="8,8">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+        <!-- Address Bar - FIXED ALIGNMENT -->
+        <Grid Grid.Row="1" Background="#2C2C2C" Padding="8,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- Navigation Buttons -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="BackBtn" Content="&#xE72B;" FontFamily="Segoe MDL2 Assets" Click="BackBtn_Click" 
-                            Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
-                            Width="32" Height="32" Margin="0,0,4,0"/>
-                    <Button x:Name="FwdBtn" Content="&#xE72A;" FontFamily="Segoe MDL2 Assets" Click="FwdBtn_Click" 
-                            Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
-                            Width="32" Height="32" Margin="0,0,4,0"/>
-                    <Button x:Name="RefBtn" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" Click="RefBtn_Click" 
-                            Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
-                            Width="32" Height="32"/>
-                </StackPanel>
+            <!-- Navigation Buttons - Vertically Centered -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="BackBtn" Content="&#xE72B;" FontFamily="Segoe MDL2 Assets" Click="BackBtn_Click" 
+                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
+                        Width="28" Height="28" Margin="0,0,2,0"/>
+                <Button x:Name="FwdBtn" Content="&#xE72A;" FontFamily="Segoe MDL2 Assets" Click="FwdBtn_Click" 
+                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
+                        Width="28" Height="28" Margin="0,0,2,0"/>
+                <Button x:Name="RefBtn" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" Click="RefBtn_Click" 
+                        Background="Transparent" BorderThickness="0" Foreground="#CCCCCC" 
+                        Width="28" Height="28" Margin="0,0,6,0"/>
+            </StackPanel>
 
-                <!-- URL Bar with Rounded Corners -->
-                <Border Grid.Column="1" Background="#3C3C3C" CornerRadius="4" Margin="8,0" Padding="8,4">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <TextBox x:Name="UrlBox" 
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Foreground="#FFFFFF"
-                                 PlaceholderText="Search or enter address"
-                                 FontSize="13"
-                                 VerticalAlignment="Center"
-                                 KeyDown="UrlBox_KeyDown"/>
-                        
-                        <Button Grid.Column="1" Content="&#xE734;" FontFamily="Segoe MDL2 Assets" 
-                                Background="Transparent" BorderThickness="0" 
-                                Foreground="#CCCCCC" Width="28" Height="28"
-                                Click="BookmarkBtn_Click"/>
-                    </Grid>
-                </Border>
+            <!-- URL Bar Container - Vertically Centered -->
+            <Border Grid.Column="1" Background="#3C3C3C" CornerRadius="20" Padding="12,0" VerticalAlignment="Center" Height="32">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox x:Name="UrlBox" 
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="#FFFFFF"
+                             PlaceholderText="Search or enter address"
+                             FontSize="13"
+                             VerticalAlignment="Center"
+                             KeyDown="UrlBox_KeyDown"/>
+                    
+                    <Button Grid.Column="1" Content="&#xE734;" FontFamily="Segoe MDL2 Assets" 
+                            Background="Transparent" BorderThickness="0" 
+                            Foreground="#CCCCCC" Width="28" Height="28"
+                            Click="BookmarkBtn_Click"/>
+                </Grid>
+            </Border>
 
-                <!-- Menu Button -->
-                <Button Grid.Column="2" Content="&#xE712;" FontFamily="Segoe MDL2 Assets" 
-                        Background="Transparent" BorderThickness="0" 
-                        Foreground="#CCCCCC" Width="32" Height="32"/>
-            </Grid>
-        </Border>
+            <!-- Menu Button - Vertically Centered -->
+            <Button Grid.Column="2" Content="&#xE712;" FontFamily="Segoe MDL2 Assets" 
+                    Background="Transparent" BorderThickness="0" 
+                    Foreground="#CCCCCC" Width="28" Height="28" 
+                    VerticalAlignment="Center" Margin="8,0,0,0"/>
+        </Grid>
 
         <controls:WebView2 x:Name="WebView" Grid.Row="2" NavigationCompleted="WebView_NavigationCompleted"/>
     </Grid>
