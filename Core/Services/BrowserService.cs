@@ -1,7 +1,6 @@
 using System;
 using Microsoft.Web.WebView2.Core;
 using TB_Browser.Core.Logging;
-using TB_Browser.Core.Models;
 
 namespace TB_Browser.Core.Services
 {
@@ -23,24 +22,17 @@ namespace TB_Browser.Core.Services
                 {
                     TabService.UpdateTab(TabService.ActiveTab.Id, _webView.Source, _webView.DocumentTitle);
                     UrlChanged?.Invoke(this, _webView.Source);
-                    _logger.Debug("BrowserService", $"Navigated to: {_webView.Source}");
+                    _logger.Debug("BrowserService", $"Source changed: {_webView.Source}");
                 }
             };
-            _webView.NavigationStarting += (s, e) =>
-            {
-                _logger.Info("BrowserService", $"Navigation starting: {e.Uri}");
-            };
+            _webView.NavigationStarting += (s, e) => _logger.Info("BrowserService", $"Navigating: {e.Uri}");
+            
             _webView.NavigationCompleted += (s, e) =>
             {
                 if (e.IsSuccess)
-                    _logger.Info("BrowserService", $"Navigation completed: {e.Source}");
+                    _logger.Info("BrowserService", $"Loaded: {e.Uri}");
                 else
-                    _logger.Warning("BrowserService", $"Navigation failed: {e.Source} (WebErrorStatus: {e.WebErrorStatus})");
-            };
-            _webView.WebResourceRequested += (s, e) =>
-            {
-                // Log blocked resources if needed
-                _logger.Debug("BrowserService", $"Resource request: {e.Request.Uri}");
+                    _logger.Warning("BrowserService", $"Failed: {e.Uri} ({e.WebErrorStatus})");
             };
         }
 
@@ -50,30 +42,28 @@ namespace TB_Browser.Core.Services
             {
                 if (!url.StartsWith("http")) url = "https://" + url;
                 _webView?.Navigate(url);
-                _logger.Info("BrowserService", $"Navigate requested: {url}");
+                _logger.Info("BrowserService", $"Navigate: {url}");
             }
             catch (Exception ex)
             {
-                _logger.Error("BrowserService", $"Navigate failed: {url}", ex);
+                _logger.Error("BrowserService", $"Navigate error: {url}", ex);
             }
         }
 
         public void GoBack()
         {
-            try { _webView?.GoBack(); _logger.Debug("BrowserService", "GoBack"); }
-            catch (Exception ex) { _logger.Warning("BrowserService", "GoBack failed", ex); }
+            try { _webView?.GoBack(); }
+            catch (Exception ex) { _logger.Warning("BrowserService", $"Back failed: {ex.Message}"); }
         }
-
         public void GoForward()
         {
-            try { _webView?.GoForward(); _logger.Debug("BrowserService", "GoForward"); }
-            catch (Exception ex) { _logger.Warning("BrowserService", "GoForward failed", ex); }
+            try { _webView?.GoForward(); }
+            catch (Exception ex) { _logger.Warning("BrowserService", $"Forward failed: {ex.Message}"); }
         }
-
         public void Reload()
         {
-            try { _webView?.Reload(); _logger.Debug("BrowserService", "Reload"); }
-            catch (Exception ex) { _logger.Warning("BrowserService", "Reload failed", ex); }
+            try { _webView?.Reload(); }
+            catch (Exception ex) { _logger.Warning("BrowserService", $"Reload failed: {ex.Message}"); }
         }
     }
 }
