@@ -12,12 +12,14 @@
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
     
-    <!-- ✅ Fixes .NET 10 SDK vs Windows SDK BuildTools path conflict -->
-    <MicrosoftWindowsSDKBuildToolsNuGetPackagePath>$(NuGetPackageRoot)microsoft.windows.sdk.buildtools\10.0.26100.1742</MicrosoftWindowsSDKBuildToolsNuGetPackagePath>
+    <!-- Required for WinUI 3 Resource Generation -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <EnableMsixTooling>true</EnableMsixTooling>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
+    <!-- ✅ Upgraded to 1.7 Preview for .NET 10 Compatibility -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250213002-preview" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
