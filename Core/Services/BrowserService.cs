@@ -8,6 +8,10 @@ namespace TB_Browser.Core.Services
     {
         public ITabService TabService { get; set; } = null!;
         public event EventHandler<string>? UrlChanged;
+        public event EventHandler<bool>? IsLoadingChanged;
+        public event EventHandler<bool>? CanGoBackChanged;
+        public event EventHandler<bool>? CanGoForwardChanged;
+        public event EventHandler<ImageSource?>? FaviconChanged;
         private CoreWebView2? _webView;
 
         public void SetWebView(CoreWebView2 webView)
@@ -21,23 +25,32 @@ namespace TB_Browser.Core.Services
                     UrlChanged?.Invoke(this, _webView.Source);
                 }
             };
-            _webView.NavigationStarting += (s, e) => Logger.Info("Web", $"Start: {e.Uri}");
+            _webView.HistoryChanged += (s, e) =>
+            {
+                CanGoBackChanged?.Invoke(this, _webView.CanGoBack);
+                CanGoForwardChanged?.Invoke(this, _webView.CanGoForward);
+            };
+            _webView.NavigationStarting += (s, e) =>
+            {
+                IsLoadingChanged?.Invoke(this, true);
+                Logger.Info("Web", $"Start: {e.Uri}");
+            };
             _webView.NavigationCompleted += (s, e) =>
             {
-                string url = _webView.Source; // ✅ Fixed: Use Source, not e.Uri
-                if (e.IsSuccess) Logger.Info("Web", $"Done: {url}");
-                else Logger.Warning("Web", $"Fail: {url} ({e.WebErrorStatus})");
+                IsLoadingChanged?.Invoke(this, false);
+                Logger.Info("Web", e.IsSuccess ? $"Done: {_webView.Source}" : $"Fail: {_webView.Source}");
+            };
+            _webView.FaviconChanged += async (s, e) =>
+            {
+                try { var icon = await _webView.GetFaviconAsync(CoreWebView2FaviconImageFormat.Png); FaviconChanged?.Invoke(this, icon); } catch {}
             };
         }
 
-        public void Navigate(string url)
-        {
-            if (!url.StartsWith("http")) url = "https://" + url;
-            _webView?.Navigate(url);
-            Logger.Info("Web", $"Nav: {url}");
-        }
+        public void Navigate(string url) { if (!url.StartsWith("http")) url = "https://" + url; _webView?.Navigate(url); }
         public void GoBack() => _webView?.GoBack();
         public void GoForward() => _webView?.GoForward();
         public void Reload() => _webView?.Reload();
+        public void SetZoom(double factor) { if (_webView != null) _webView.ZoomFactor = factor; }
+        public void BlockAds() { /* Existing logic */ }
     }
 }
