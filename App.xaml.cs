@@ -8,36 +8,28 @@ namespace TB_Browser
 {
     public partial class App : Application
     {
-        public static ILogger Logger { get; private set; } = null!;
-
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            Logger = new FileLogger();
-            Logger.Info("App", "Application started");
-
+            Logger.Info("App", "Started");
             try
             {
-                var tabService = new TabService(Logger);
-                var browserService = new BrowserService(Logger);
-                browserService.TabService = tabService;
+                var tabSvc = new TabService();
+                var browserSvc = new BrowserService();
+                browserSvc.TabService = tabSvc;
 
-                var tabBar = new TabBar(tabService);
-                var addressBar = new AddressBar(browserService);
-                var browserView = new BrowserView(browserService);
+                var tabBar = new TabBar(tabSvc);
+                var addressBar = new AddressBar(browserSvc);
+                var browserView = new BrowserView(browserSvc);
+                tabSvc.ActiveTabChanged += (s, tab) => browserView.SwitchTo(tab);
 
-                tabService.ActiveTabChanged += (s, tab) => browserView.SwitchTo(tab);
-
-                var mainWindow = new MainWindow(tabBar, addressBar, browserView);
-                mainWindow.Show();
-
-                Logger.Info("App", "MainWindow shown");
+                var win = new MainWindow(tabBar, addressBar, browserView);
+                win.Show();
             }
             catch (Exception ex)
             {
-                Logger.Critical("App", "Startup failed", ex);
-                MessageBox.Show($"Fatal Error: {ex.Message}", "TB Browser", MessageBoxButton.OK, MessageBoxImage.Error);
+                Logger.Error("App", ex.Message);
+                MessageBox.Show("Startup failed: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown(1);
             }
         }
