@@ -1,5 +1,4 @@
 using System.Windows;
-using TB_Browser.UI.Controls; // ✅ Add this line
 
 namespace TB_Browser
 {
@@ -11,6 +10,12 @@ namespace TB_Browser
             TabBarHost.Content = tabBar;
             AddressBarHost.Content = addressBar;
             BrowserHost.Content = browserView;
+        }
+
+        private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+                this.DragMove();
         }
     }
 }
