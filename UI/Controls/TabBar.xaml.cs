@@ -1,24 +1,23 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
+using System.Windows;
+using System.Windows.Controls;
 using TB_Browser.Core.Services;
 
 namespace TB_Browser.UI.Controls
 {
-    public sealed partial class TabBar : UserControl
+    public partial class TabBar : UserControl
     {
         private readonly ITabService _svc;
-        public TabBar(ITabService svc) { InitializeComponent(); _svc = svc; BindTabs(); }
-
-        private void BindTabs()
+        public TabBar(ITabService svc)
         {
+            InitializeComponent();
+            _svc = svc;
             _svc.TabAdded += (_, t) => AddTabUI(t);
             _svc.TabRemoved += (_, t) => RemoveTabUI(t.Id);
-            foreach (var t in _svc.Tabs) AddTabUI(t);
         }
 
         private void AddTabUI(TabModel t)
         {
-            var btn = new Button { Content = t.Title, Style = (Style)Resources["TabBtn"] };
+            var btn = new Button { Content = t.Title, Style = (Style)FindResource("TabBtn") };
             btn.Click += (_, _) => _svc.ActivateTab(t.Id);
             btn.Tag = t.Id;
             TabsPanel.Children.Add(btn);
@@ -30,8 +29,12 @@ namespace TB_Browser.UI.Controls
                 if (b.Tag is int tid && tid == id) { TabsPanel.Children.Remove(b); break; }
         }
 
-        private void Minimize_Click(object s, RoutedEventArgs e) => ((Window)XamlRoot.Content).Minimize();
-        private void Maximize_Click(object s, RoutedEventArgs e) { var w = (Window)XamlRoot.Content; w.OverlappedPresenter.IsMaximized = !w.OverlappedPresenter.IsMaximized; }
-        private void Close_Click(object s, RoutedEventArgs e) => Environment.Exit(0);
+        private void Minimize_Click(object s, RoutedEventArgs e) => Window.GetWindow(this).WindowState = WindowState.Minimized;
+        private void Maximize_Click(object s, RoutedEventArgs e) 
+        { 
+            var w = Window.GetWindow(this);
+            w.WindowState = w.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; 
+        }
+        private void Close_Click(object s, RoutedEventArgs e) => Application.Current.Shutdown();
     }
 }
