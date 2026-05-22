@@ -25,13 +25,9 @@ namespace TB_Browser
 
                 var win = new MainWindow(tabBar, addressBar, browserView);
                 win.Show();
+                Logger.Info("App", "Window shown");
             }
-            catch (Exception ex)
-            {
-                Logger.Error("App", ex.Message);
-                MessageBox.Show("Startup failed: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Shutdown(1);
-            }
+            catch (Exception ex) { Logger.Error("App", ex.Message); MessageBox.Show("Startup failed: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(1); }
         }
     }
 }
