@@ -3,13 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:Microsoft.UI.Xaml.Controls"
         Title="TB Browser">
+    
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
+            <!-- Row 0: Tab Bar -->
             <RowDefinition Height="Auto"/>
+            <!-- Row 1: Address Bar & Buttons -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row 2: Web Content -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Tab Bar -->
+        <!-- 1. Tab Bar -->
         <controls:TabView x:Name="TabView" Grid.Row="0"
                           AddTabButtonClick="TabView_AddTabButtonClick"
                           TabCloseRequested="TabView_TabCloseRequested">
@@ -20,7 +25,22 @@
             </controls:TabView.TabStripHeader>
         </controls:TabView>
 
-        <!-- WebView Container -->
-        <controls:WebView2 x:Name="WebView" Grid.Row="1"/>
+        <!-- 2. Address Bar -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Padding="8" Margin="0,4,0,8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <!-- Navigation Buttons -->
+            <Button x:Name="BackBtn" Content="&#xE72B;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="Back" Click="BackBtn_Click" Margin="4,0"/>
+            <Button x:Name="FwdBtn" Content="&#xE72A;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="Forward" Click="FwdBtn_Click" Margin="4,0"/>
+            <Button x:Name="RefBtn" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="Refresh" Click="RefBtn_Click" Margin="4,0"/>
+            <Button x:Name="HomeBtn" Content="&#xE80F;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="Home" Click="HomeBtn_Click" Margin="4,0"/>
+            
+            <!-- URL Input -->
+            <TextBox x:Name="UrlBox" HorizontalAlignment="Stretch" PlaceholderText="Enter URL..." KeyDown="UrlBox_KeyDown" Margin="8,0"/>
+            
+            <!-- Go Button -->
+            <Button Content="Go" Click="GoBtn_Click" Style="{StaticResource AccentButtonStyle}" Margin="4,0"/>
+        </StackPanel>
+
+        <!-- 3. WebView -->
+        <controls:WebView2 x:Name="WebView" Grid.Row="2" NavigationCompleted="WebView_NavigationCompleted"/>
     </Grid>
 </Window>
