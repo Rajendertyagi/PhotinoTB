@@ -1,3 +1,5 @@
+using System;
+
 namespace TB_Browser.Core.Services
 {
     public interface IBrowserService
@@ -7,6 +9,6 @@ namespace TB_Browser.Core.Services
         void GoBack();
         void GoForward();
         void Reload();
-        event EventHandler<string> UrlChanged;
+        event EventHandler<string>? UrlChanged;
     }
 }
