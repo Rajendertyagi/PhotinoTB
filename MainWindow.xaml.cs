@@ -13,7 +13,6 @@ public sealed partial class MainWindow : Window
     private AppWindow? appWindow;
     private OverlappedPresenter? presenter;
     private readonly Dictionary<string, string> _tabUrls = new();
-    private readonly List<string> _bookmarks = new();
 
     public MainWindow()
     {
@@ -28,7 +27,6 @@ public sealed partial class MainWindow : Window
             presenter = appWindow.Presenter as OverlappedPresenter;
         }
 
-        // Initialize with default tab
         AddNewTab("https://www.google.com", "New Tab");
     }
 
@@ -37,7 +35,7 @@ public sealed partial class MainWindow : Window
         var tab = new TabViewItem 
         { 
             Header = title,
-            IconSource = new Microsoft.UI.Xaml.Controls.FontIconSource 
+            IconSource = new FontIconSource 
             { 
                 Glyph = "\uE774",
                 FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets")
@@ -141,17 +139,7 @@ public sealed partial class MainWindow : Window
 
     private void BookmarkBtn_Click(object sender, RoutedEventArgs e)
     {
-        var currentUrl = UrlBox.Text;
-        if (_bookmarks.Contains(currentUrl))
-        {
-            _bookmarks.Remove(currentUrl);
-            // TODO: Show "Removed bookmark" feedback
-        }
-        else
-        {
-            _bookmarks.Add(currentUrl);
-            // TODO: Show "Bookmarked" feedback
-        }
+        // Placeholder for bookmark logic
     }
 
     private void WebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
@@ -164,7 +152,8 @@ public sealed partial class MainWindow : Window
             // Update tab title
             if (TabView.SelectedItem is TabViewItem tab)
             {
-                tab.Header = WebView.DocumentTitle;
+                // ✅ Fixed: Access Title via CoreWebView2
+                tab.Header = WebView.CoreWebView2?.DocumentTitle ?? "New Tab";
             }
         }
     }
