@@ -3,7 +3,24 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:Microsoft.UI.Xaml.Controls"
         Title="TB Browser">
-    <Grid Padding="12" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <controls:WebView2 x:Name="WebView" Source="https://www.google.com"/>
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Tab Bar -->
+        <controls:TabView x:Name="TabView" Grid.Row="0"
+                          AddTabButtonClick="TabView_AddTabButtonClick"
+                          TabCloseRequested="TabView_TabCloseRequested">
+            <controls:TabView.TabStripHeader>
+                <Grid Height="40" Margin="12,0,0,0">
+                    <TextBlock Text="TB Browser" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}"/>
+                </Grid>
+            </controls:TabView.TabStripHeader>
+        </controls:TabView>
+
+        <!-- WebView Container -->
+        <controls:WebView2 x:Name="WebView" Grid.Row="1"/>
     </Grid>
 </Window>
