@@ -1,0 +1,18 @@
+<UserControl x:Class="TB_Browser.UI.Controls.TabBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="#292a2d" ColumnSpacing="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Hidden">
+            <StackPanel x:Name="TabsPanel" Orientation="Horizontal" Padding="8,4"/>
+        </ScrollViewer>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Padding="8,0">
+            <Button Content="─" Width="44" Click="Minimize_Click"/>
+            <Button Content="□" Width="44" Click="Maximize_Click"/>
+            <Button Content="✕" Width="44" Click="Close_Click"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
