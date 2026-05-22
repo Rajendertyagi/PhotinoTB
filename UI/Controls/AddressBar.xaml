@@ -14,9 +14,11 @@
         <Button Grid.Column="1" Content="→" Style="{StaticResource NavBtn}" Click="Forward_Click" Margin="0,0,4,0"/>
         <Button Grid.Column="2" Content="⟳" Style="{StaticResource NavBtn}" Click="Reload_Click" Margin="0,0,4,0"/>
         
-        <TextBox Grid.Column="3" x:Name="UrlBox" Background="#303134" Foreground="#fff" BorderThickness="0" 
-                 Padding="8" VerticalAlignment="Center" CornerRadius="18" KeyDown="Url_KeyDown"
-                 Template="{StaticResource {x:Type TextBox}}" />
+        <!-- TextBox wrapped in Border for rounded corners (WPF-compatible) -->
+        <Border Grid.Column="3" Background="#303134" CornerRadius="18" Padding="8,4" Margin="0,2">
+            <TextBox x:Name="UrlBox" Background="Transparent" Foreground="#fff" BorderThickness="0" 
+                     VerticalAlignment="Center" KeyDown="Url_KeyDown"/>
+        </Border>
         
         <Button Grid.Column="4" Content="Go" Background="#5f6368" Foreground="#fff" BorderThickness="0" 
                 Padding="16,6" Margin="8,0,0,0" Click="Go_Click" CornerRadius="18"/>
