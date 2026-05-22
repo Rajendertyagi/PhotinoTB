@@ -2,34 +2,31 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using TB_Browser.UI.Controls;
 
 namespace TB_Browser
 {
     public partial class MainWindow : Window
     {
-        private TabBar? _tabBar;
-        private AddressBar? _addressBar;
-        private BrowserView? _browserView;
-
         public MainWindow(TabBar tabBar, AddressBar addressBar, BrowserView browserView)
         {
             InitializeComponent();
-            _tabBar = tabBar; _addressBar = addressBar; _browserView = browserView;
             TabBarHost.Content = tabBar;
             AddressBarHost.Content = addressBar;
             BrowserHost.Content = browserView;
 
-            CommandBindings.Add(new CommandBinding(ApplicationCommands.New, (_, _) => _tabBar?.CreateNewTab()));
-            CommandBindings.Add(new CommandBinding(ApplicationCommands.Close, (_, _) => _tabBar?.CloseActive()));
-            CommandBindings.Add(new CommandBinding(ApplicationCommands.Properties, (_, _) => _addressBar?.FocusUrl()));
-            CommandBindings.Add(new CommandBinding(NavigationCommands.Refresh, (_, _) => _browserView?.Reload()));
-            CommandBindings.Add(new CommandBinding(NavigationCommands.BrowseBack, (_, _) => _browserView?.GoBack()));
-            CommandBindings.Add(new CommandBinding(NavigationCommands.BrowseForward, (_, _) => _browserView?.GoForward()));
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.New, (_, _) => tabBar.CreateNewTab()));
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Close, (_, _) => tabBar.CloseActive()));
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Properties, (_, _) => addressBar.FocusUrl()));
+            CommandBindings.Add(new CommandBinding(NavigationCommands.Refresh, (_, _) => browserView.Reload()));
+            CommandBindings.Add(new CommandBinding(NavigationCommands.BrowseBack, (_, _) => browserView.GoBack()));
+            CommandBindings.Add(new CommandBinding(NavigationCommands.BrowseForward, (_, _) => browserView.GoForward()));
 
-            _browserView?.SetProgressHandler(ShowProgress);
-            _browserView?.SetStatusHandler(s => StatusText.Text = s);
+            browserView.SetProgressHandler(ShowProgress);
+            browserView.SetStatusHandler(s => StatusText.Text = s);
         }
 
         private void ShowProgress(bool isVisible)
@@ -38,10 +35,14 @@ namespace TB_Browser
             if (isVisible)
             {
                 LoadProgress.Value = 0;
-                LoadProgress.BeginAnimation(ProgressBar.ValueProperty, new System.Windows.Media.Animation.DoubleAnimation(100, TimeSpan.FromSeconds(1)));
+                LoadProgress.BeginAnimation(ProgressBar.ValueProperty, new DoubleAnimation(100, TimeSpan.FromSeconds(1)));
             }
         }
 
-        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == MouseButtonState.Pressed)
+                DragMove();
+        }
     }
 }
