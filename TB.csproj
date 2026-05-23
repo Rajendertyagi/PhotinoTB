@@ -6,9 +6,10 @@
     <RootNamespace>TB</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>true</EnableMsixTooling>
-    <UseWindowsSdkDesktopFrameworkOnly>true</UseWindowsSdkDesktopFrameworkOnly>
+    <!-- ✅ REMOVED: <UseWindowsSdkDesktopFrameworkOnly> (breaks WinUI 3 XAML compiler) -->
   </PropertyGroup>
 
   <ItemGroup>
