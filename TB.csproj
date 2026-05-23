@@ -21,9 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\Fonts\GoogleSans-Regular.ttf" />
+    <!-- Only App.xaml needs explicit ApplicationDefinition -->
     <ApplicationDefinition Include="Core\App.xaml" />
-    <Page Include="Core\MainWindow.xaml" />
-    <Page Include="UI\Styles\AppStyles.xaml" />
+    
+    <!-- Fonts as Resource (not auto-included) -->
+    <Resource Include="Assets\Fonts\GoogleSans-Regular.ttf" />
   </ItemGroup>
 </Project>
