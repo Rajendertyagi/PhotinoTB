@@ -11,17 +11,13 @@
     <UseWinUI>true</UseWinUI>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
 
-    <!-- ✅ Official WinUI 3 CI Properties (Microsoft Docs) -->
+    <!-- ✅ Official Unpackaged CI Properties -->
     <WindowsPackageType>None</WindowsPackageType>
+    <DisableMsixProjectCapabilityCheck>true</DisableMsixProjectCapabilityCheck>
     <EnableMsixTooling>false</EnableMsixTooling>
     <DisableWinUIXamlDiagnostics>true</DisableWinUIXamlDiagnostics>
-    <_SkipGeneratePriResource>true</_SkipGeneratePriResource>
-    <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
-    <WindowsAppSdkBundleEnable>false</WindowsAppSdkBundleEnable>
-    <DisablePriGeneration>true</DisablePriGeneration>
-    <GenerateLibraryLayout>false</GenerateLibraryLayout>
-    <WindowsAppSdkPriGenDisabled>true</WindowsAppSdkPriGenDisabled>
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+    <GeneratePriResource>false</GeneratePriResource>
   </PropertyGroup>
 
   <ItemGroup>
@@ -43,4 +39,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <!-- ✅ Bypass MSBuild evaluation order bug -->
+  <Target Name="SkipExpandPriContent" BeforeTargets="ExpandPriContent" />
 </Project>
