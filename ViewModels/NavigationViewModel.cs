@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TB_Browser.Infrastructure;
-using TB_Browser.Models;
 using TB_Browser.Repositories;
 
 namespace TB_Browser.ViewModels;
@@ -28,12 +27,13 @@ public partial class NavigationViewModel : ObservableObject
         }
 
         var history = await _historyRepo.GetRecentAsync(50);
+        
+        // ✅ FIX CS8620: Force non-nullable string list before passing to FuzzyMatcher
         var items = history
-            .Select(h => h.Url)
+            .Select(h => h.Url!)
             .Where(u => !string.IsNullOrEmpty(u))
             .ToList();
 
-        // ✅ FIX CS0723: Call static method directly, no 'new FuzzyMatcher()'
         Suggestions = FuzzyMatcher.Filter(items, query, threshold: 2);
     }
 }
