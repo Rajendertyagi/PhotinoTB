@@ -17,61 +17,39 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with: { dotnet-version: '10.0.x' }
 
-      - name: 🧹 Deep Clean
+      - name: Clean Everything
         run: |
-          Write-Host "Removing bin, obj, publish folders..."
-          Remove-Item -Recurse -Force bin, obj, publish -ErrorAction SilentlyContinue
-          Write-Host "Removing all .zip files from repository..."
+          Remove-Item -Recurse -Force obj, bin, publish -ErrorAction SilentlyContinue
           Get-ChildItem -Recurse -Filter *.zip | Remove-Item -Force
-          Write-Host "✅ Clean complete."
-
-      - name: 📦 Restore & Build
-        run: |
           dotnet restore
-          dotnet build TB.csproj --configuration Release --no-restore -r win-x64
 
-      - name: 📂 Prepare Publish Folder
+      - name: Build
+        run: dotnet build TB.csproj --configuration Release --no-restore -r win-x64
+
+      - name: Copy to Publish (Exclude ZIPs)
         run: |
-          # Ensure publish folder is absolutely empty and fresh
-          Remove-Item -Recurse -Force ./publish -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Path ./publish | Out-Null
-          
-          Write-Host "Copying files to publish..."
-          $sourcePath = "./bin/Release/net10.0-windows/win-x64"
-          
-          if (Test-Path $sourcePath) {
-              Get-ChildItem -Path $sourcePath | 
-                Where-Object { $_.Extension -ne '.zip' } | 
-                Copy-Item -Destination ./publish -Recurse -Force
-              Write-Host "✅ Copied contents from $sourcePath."
+          New-Item -ItemType Directory -Force -Path ./publish
+          Get-ChildItem -Path ./bin/Release/net10.0-windows/win-x64 | 
+            Where-Object { $_.Extension -ne '.zip' } | 
+            Copy-Item -Destination ./publish -Recurse -Force
+
+      - name: 🧹 Remove any nested ZIPs from publish folder
+        run: |
+          $nestedZips = Get-ChildItem -Path ./publish -Recurse -Filter *.zip
+          if ($nestedZips) {
+            Write-Host "Found $($nestedZips.Count) nested zip(s) – removing them."
+            $nestedZips | Remove-Item -Force
           } else {
-              Write-Error "❌ Build output not found at $sourcePath!"
+            Write-Host "No nested zips found."
           }
 
-      - name: 🔍 Verify Contents
+      - name: Create Final ZIP (in root, not publish)
         run: |
-          Write-Host " Listing ./publish contents (checking for nested zips):"
-          Get-ChildItem -Path ./publish -Recurse | Select-Object FullName, Length
-          $zipCount = (Get-ChildItem -Path ./publish -Recurse -Filter *.zip).Count
-          if ($zipCount -gt 0) {
-              Write-Error "❌ ERROR: Found $zipCount zip files in publish folder! Build will be corrupted."
-          } else {
-              Write-Host "✅ No nested zips found."
-          }
+          Compress-Archive -Path publish\* -DestinationPath TB-Portable.zip -Force
+          Write-Host "Final ZIP contents:"
+          Get-ChildItem TB-Portable.zip | Select-Object Name, Length
 
-      - name: 🗜️ Create Final ZIP
-        run: |
-          Write-Host "Creating archive..."
-          if (Test-Path TB-Portable.zip) { Remove-Item TB-Portable.zip }
-          
-          Compress-Archive -Path ./publish/* -DestinationPath TB-Portable.zip -Force
-          Write-Host "✅ TB-Portable.zip created in root directory."
-          
-          Write-Host "📦 Final artifact size:"
-          Get-Item TB-Portable.zip | Select-Object Name, Length
-
-      - name: 🚀 Upload Artifact
-        uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7
         with:
           name: TB-Portable
           path: TB-Portable.zip
