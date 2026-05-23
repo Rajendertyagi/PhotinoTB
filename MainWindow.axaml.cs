@@ -1,7 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.WebView2;
+using Avalonia.Controls.WebView;
+using Microsoft.Web.WebView2.Core;
 using TB.Features;
 using TB.Features.Navigation;
 using TB.Features.Tabs;
@@ -25,19 +26,22 @@ public partial class MainWindow : Window
         if (BrowserView != null && ViewModel.SelectedTab != null)
         {
             await BrowserView.EnsureCoreWebView2Async();
-            BrowserView.Source = new Uri(ViewModel.SelectedTab.Url);
-            BrowserView.CoreWebView2.SourceChanged += CoreWebView2_SourceChanged;
-            BrowserView.CoreWebView2.NavigationCompleted += CoreWebView2_NavigationCompleted;
+            if (BrowserView.CoreWebView2 != null)
+            {
+                BrowserView.Source = new Uri(ViewModel.SelectedTab.Url);
+                BrowserView.CoreWebView2.SourceChanged += CoreWebView2_SourceChanged;
+                BrowserView.CoreWebView2.NavigationCompleted += CoreWebView2_NavigationCompleted;
+            }
         }
     }
 
-    private void CoreWebView2_SourceChanged(object? sender, Microsoft.Web.WebView2.Core.CoreWebView2SourceChangedEventArgs e)
+    private void CoreWebView2_SourceChanged(object? sender, CoreWebView2SourceChangedEventArgs e)
     {
         if (BrowserView?.CoreWebView2?.Source != null)
             Omnibox.Text = BrowserView.CoreWebView2.Source;
     }
 
-    private void CoreWebView2_NavigationCompleted(object? sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
+    private void CoreWebView2_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
         if (ViewModel.SelectedTab != null && BrowserView?.CoreWebView2 != null)
         {
@@ -52,7 +56,8 @@ public partial class MainWindow : Window
         if (e.AddedItems[0] is TabViewModel tab)
         {
             await BrowserView.EnsureCoreWebView2Async();
-            BrowserView.Source = new Uri(tab.Url);
+            if (BrowserView.CoreWebView2 != null)
+                BrowserView.Source = new Uri(tab.Url);
         }
     }
 
