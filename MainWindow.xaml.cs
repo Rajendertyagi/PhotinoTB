@@ -26,28 +26,27 @@ public sealed partial class MainWindow : Window
 
         this.ExtendsContentIntoTitleBar = true;
         this.SetTitleBar(TitleBarGrid);
-        
-        // ✅ WinUI 3 requires AppWindow for sizing (XAML Width/Height are ignored)
         this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1000, 600));
 
         _webViewService.InitializeAsync(WebView).ContinueWith(_ =>
         {
-            _webViewService.SourceChanged += (s, url) => NavigationVM.AddressBarText = url;
-            _webViewService.NavigationCompleted += (s, title) =>
+            _webViewService.SourceChanged += (s, e) => NavigationVM.AddressBarText = _webViewService.CoreWebView2?.Source ?? "";
+            _webViewService.NavigationCompleted += (s, e) =>
             {
-                if (_viewModel.SelectedTab != null) _viewModel.SelectedTab.Title = title ?? "New Tab";
+                if (_viewModel.SelectedTab != null)
+                    _viewModel.SelectedTab.Title = _webViewService.CoreWebView2?.DocumentTitle ?? "New Tab";
             };
             _tabManager.CreateNewTab("https://www.google.com");
         });
     }
 
-    private void Minimize_Click(object sender, RoutedEventArgs e) 
+    private void Minimize_Click(object sender, RoutedEventArgs e)
     {
         var presenter = this.AppWindow.Presenter as Microsoft.UI.Windowing.OverlappedPresenter;
         presenter?.Minimize();
     }
 
-    private void Maximize_Click(object sender, RoutedEventArgs e) 
+    private void Maximize_Click(object sender, RoutedEventArgs e)
     {
         var presenter = this.AppWindow.Presenter as Microsoft.UI.Windowing.OverlappedPresenter;
         if (presenter?.State == Microsoft.UI.Windowing.OverlappedPresenterState.Maximized)
