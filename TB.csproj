@@ -13,7 +13,8 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <GenerateLibraryLayout>false</GenerateLibraryLayout>
     <EnableMsixTooling>false</EnableMsixTooling>
-    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers> <!-- ✅ Fixes WebView2 asset resolution -->
+    <DisableWinUIXamlDiagnostics>true</DisableWinUIXamlDiagnostics> <!-- ✅ Prevents XamlCompiler crash -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,7 +26,20 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
   </ItemGroup>
 
+  <!-- ✅ Explicit XAML metadata prevents implicit SDK conflicts & compiler crashes -->
   <ItemGroup>
+    <ApplicationDefinition Include="Core\App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Include="Core\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UI\Styles\AppStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Content Include="Assets\Fonts\GoogleSans-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
