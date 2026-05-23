@@ -22,7 +22,7 @@ public partial class App : Application
         var pathResolver = new PathResolver();
         pathResolver.EnsureDirectories();
         Services = Container.Register(pathResolver);
-        Services.GetRequiredService<DbInitializer>().Initialize();
+        // DbInitializer deferred to Phase 3 (data persistence)
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
