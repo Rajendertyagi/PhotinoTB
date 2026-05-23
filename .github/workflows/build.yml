@@ -15,13 +15,12 @@ env:
   CONFIGURATION: Release
   RUNTIME: win-x64
   EnableWindowsTargeting: true
-  WindowsSdkPackageVersion: 10.0.26100.1742
 
 jobs:
   build:
     runs-on: windows-2022
     steps:
-      - name:  Checkout code
+      - name: 📦 Checkout code
         uses: actions/checkout@v5
 
       - name: ⚙️ Setup .NET 10
@@ -29,8 +28,15 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: 📥 Restore dependencies
-        run: dotnet restore
+      - name:  Restore Workloads & Dependencies
+        run: |
+          dotnet workload restore
+          dotnet restore
+        shell: pwsh
+
+      - name: 🧹 Clean Build Artifacts
+        run: dotnet clean -c Release
+        shell: pwsh
 
       - name: 🔨 Build & Publish (Framework-Dependent)
         run: >
@@ -40,11 +46,10 @@ jobs:
           --self-contained false
           -o ./publish
           -p:EnableWindowsTargeting=true
-          -p:WindowsSdkPackageVersion=${{ env.WindowsSdkPackageVersion }}
-          -p:XamlDebug=true
+          -p:XamlDiagnosticLevel=Verbose
         shell: pwsh
 
-      - name: 🧹 Strip Runtime & SDK Files for Minimal Build
+      - name:  Strip Runtime & SDK Files for Minimal Build
         run: |
           cd publish
           
