@@ -1,72 +1,20 @@
-name: Build TB Browser (WinUI 3)
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-
+name: Build TB (Phase 1)
+on: [push, workflow_dispatch]
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  DOTNET_CLI_UI_LANGUAGE: en
-  CONFIGURATION: Release
-  RUNTIME: win-x64
-  EnableWindowsTargeting: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: windows-2022
     steps:
-      - name: 📦 Checkout code
-        uses: actions/checkout@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: ⚙️ Setup .NET 10
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: 📥 Install Workload & Restore
-        run: |
-          dotnet workload install windows-desktop
-          dotnet restore
-        shell: pwsh
-
-      - name: 🧹 Clean Stale Artifacts
-        run: |
-          Remove-Item -Recurse -Force obj, bin -ErrorAction SilentlyContinue
-          dotnet clean -c ${{ env.CONFIGURATION }}
-        shell: pwsh
-
-      - name: 🔨 Build & Publish (Framework-Dependent)
-        run: >
-          dotnet publish
-          -c ${{ env.CONFIGURATION }}
-          -r ${{ env.RUNTIME }}
-          --self-contained false
-          -p:SelfContained=false
-          -p:PublishSingleFile=false
-          -p:PublishTrimmed=false
-          -p:EnableWindowsTargeting=true
-          -p:WindowsPackageType=None
-          -p:AllowUnsafeBlocks=true
-          -p:GenerateLibraryLayout=false
-          -o ./publish
-        shell: pwsh
-
-      - name: 📦 Zip Full Output
-        run: Compress-Archive -Path publish\* -DestinationPath TB-Browser.zip -Force
-        shell: pwsh
-
-      - name: 📤 Upload Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: TB-Browser
-          path: TB-Browser.zip
-          if-no-files-found: error
-          retention-days: 30
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with: { dotnet-version: '10.0.x' }
+      - run: dotnet workload install windows-desktop
+      - run: Remove-Item -Recurse -Force obj, bin -ErrorAction SilentlyContinue; dotnet restore
+      - run: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -p:PublishTrimmed=false -o ./publish
+      - run: Compress-Archive -Path publish\* -DestinationPath TB-Portable.zip -Force
+      - uses: actions/upload-artifact@v7
+        with: { name: TB-Portable, path: TB-Portable.zip, retention-days: 14 }
