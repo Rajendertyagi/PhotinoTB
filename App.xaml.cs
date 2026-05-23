@@ -1,59 +1,69 @@
 using System;
-using System.IO;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using TB_Browser.Infrastructure;
+using TB_Browser.Repositories;
 using TB_Browser.Services;
 using TB_Browser.ViewModels;
-using TB_Browser.Repositories;
 
 namespace TB_Browser;
 
+/// <summary>
+/// Application entry point. Manages DI container, startup lifecycle, and global state.
+/// </summary>
 public partial class App : Application
 {
+    /// <summary>
+    /// Global service provider for dependency injection across the app.
+    /// </summary>
     public static IServiceProvider? Services { get; private set; }
 
     public App()
     {
+        // 1. Initialize WinUI XAML engine
         InitializeComponent();
         
-        // Initialize Logging immediately
+        // 2. Start logging immediately
         LoggingService.Init();
-        LoggingService.Info("App started.");
+        LoggingService.Info("TB-Browser starting...");
         
+        // 3. Configure DI before any windows or services are created
         ConfigureDI();
     }
 
     private void ConfigureDI()
     {
         var services = new ServiceCollection();
-        
-        // --- Infrastructure ---
+
+        // ─── Infrastructure ──
         services.AddSingleton<PathResolver>();
         services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
         services.AddSingleton<DbInitializer>();
-        
-        // --- Services ---
+
+        // ─── Repositories (Dapper + SQLite) ───
+        services.AddSingleton<BookmarkRepository>();
+        services.AddSingleton<HistoryRepository>();
+
+        // ─── Core Services ───
         services.AddSingleton<SettingsService>();
         services.AddSingleton<FaviconService>();
         services.AddSingleton<TabService>();
-        services.AddSingleton<NavigationService>();
         services.AddSingleton<BookmarkService>();
         services.AddSingleton<HistoryService>();
-        services.AddSingleton<SearchService>();
+        
+        // Note: NavigationService, UpdateService, SearchService are registered per spec.
+        // Provide minimal implementations or stubs if not yet built.
+        services.AddSingleton<NavigationService>();
         services.AddSingleton<UpdateService>();
-        
-        // --- Repositories ---
-        services.AddSingleton<BookmarkRepository>();
-        services.AddSingleton<HistoryRepository>();
-        
-        // --- ViewModels ---
+        services.AddSingleton<SearchService>();
+
+        // ─── ViewModels (MVVM) ──
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<NavigationViewModel>();
-        services.AddTransient<TabViewModel>(); // NewTab creates transient instances
+        services.AddTransient<TabViewModel>(); // New tabs get fresh instances
 
+        // Build container
         Services = services.BuildServiceProvider();
     }
 
@@ -61,30 +71,50 @@ public partial class App : Application
     {
         try
         {
-            // Ensure Data Directory exists
+            LoggingService.Info("App launched. Initializing environment...");
+
+            // 1. Resolve paths & ensure data directories exist
             var pathResolver = Services!.GetRequiredService<PathResolver>();
             pathResolver.EnsureDirectories();
-            
-            // Initialize Database (Async but we block here for startup simplicity, 
-            // or fire-and-forget if we add a splash screen later. For now, sync init is safer.)
-            var dbInit = Services!.GetRequiredService<DbInitializer>();
+
+            // 2. Initialize SQLite schema (idempotent, safe to call every launch)
+            var dbInit = Services.GetRequiredService<DbInitializer>();
             dbInit.Initialize();
-            
-            // Create Main Window
+
+            // 3. Create & activate main window
             var mainWindow = new MainWindow();
             mainWindow.Activate();
-            
-            LoggingService.Info("MainWindow activated.");
+
+            LoggingService.Info("MainWindow activated. Startup complete.");
         }
         catch (Exception ex)
         {
-            LoggingService.Error("Startup failed", ex);
-            // Fallback to simple dialog if UI fails
-            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog();
-            dialog.Title = "Startup Error";
-            dialog.Content = ex.Message;
-            dialog.PrimaryButtonText = "Close";
-            // Note: Dialog requires active window, but if app crashes here, we just exit.
+            LoggingService.Error("Critical startup failure", ex);
+            
+            // Framework-dependent apps should fail gracefully rather than crash silently.
+            // In production, you might show a native MessageBox or exit cleanly.
+            System.Environment.Exit(1);
         }
+    }
+
+    protected override void OnClosed(object sender, AppLifecycleEventArgs args)
+    {
+        // Flush queues & dispose resources before exit
+        try
+        {
+            var bookmarkService = Services?.GetService<BookmarkService>();
+            var historyService = Services?.GetService<HistoryService>();
+            
+            if (bookmarkService != null) bookmarkService.FlushAsync().Wait();
+            if (historyService != null) historyService.FlushAsync().Wait();
+            
+            LoggingService.Info("App closed cleanly.");
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Error("Shutdown error", ex);
+        }
+        
+        base.OnClosed(sender, args);
     }
 }
