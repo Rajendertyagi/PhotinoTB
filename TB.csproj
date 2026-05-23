@@ -13,7 +13,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <GenerateLibraryLayout>false</GenerateLibraryLayout>
     <EnableMsixTooling>false</EnableMsixTooling>
-    <DisableWinUIXamlDiagnostics>true</DisableWinUIXamlDiagnostics> <!-- ✅ Prevents XamlCompiler crash -->
+    <DisableWinUIXamlDiagnostics>true</DisableWinUIXamlDiagnostics>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
@@ -26,20 +26,8 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
   </ItemGroup>
 
-  <!-- ✅ Explicit XAML metadata prevents implicit SDK conflicts & compiler crashes -->
+  <!-- Only non-XAML assets need explicit inclusion -->
   <ItemGroup>
-    <ApplicationDefinition Include="Core\App.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </ApplicationDefinition>
-    <Page Include="Core\MainWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UI\Styles\AppStyles.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Content Include="Assets\Fonts\GoogleSans-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
