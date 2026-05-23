@@ -6,7 +6,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.WinUI;
 using TB.Features;
 using TB.Features.Tabs;
 
@@ -16,7 +15,7 @@ public sealed partial class MainWindow : Window
 {
     public MainViewModel ViewModel { get; }
     private AppWindow? _appWindow;
-    private WebView2? _webView;
+    private WebView2? _webView; // Now resolves to Microsoft.UI.Xaml.Controls.WebView2
 
     public MainWindow()
     {
@@ -30,16 +29,14 @@ public sealed partial class MainWindow : Window
 
     private async Task InitializeWebViewAsync()
     {
-        // 1. Instantiate WinUI 3 WebView2 control programmatically
+        // Instantiate control programmatically to bypass XAML compiler RID gaps
         _webView = new WebView2();
         WebViewContainer.Children.Add(_webView);
 
-        // 2. Initialize CoreWebView2 environment
         await _webView.EnsureCoreWebView2Async();
         var core = _webView.CoreWebView2;
         if (core == null) return;
 
-        // 3. Wire navigation events
         core.NavigationStarting += (s, e) => ViewModel.OnNavigationStarting();
         core.NavigationCompleted += (s, e) => ViewModel.OnNavigationCompleted(s.Source, s.DocumentTitle);
         core.NewWindowRequested += (s, e) => { e.Handled = true; ViewModel.OpenInNewTab(e.Uri); };
