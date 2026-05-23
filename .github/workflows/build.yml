@@ -21,14 +21,15 @@ jobs:
           rm -rf obj bin publish
           dotnet restore
 
-      - name: Build
-        run: dotnet build TB.csproj --configuration Release --no-restore
+      - name: Build (Windows Target)
+        # ✅ Explicit RID ensures Windows output even on Linux runner
+        run: dotnet build TB.csproj --configuration Release --no-restore -r win-x64
 
       - name: Publish Windows
         run: |
           dotnet publish TB.csproj -c Release -r win-x64 --self-contained false
           mkdir -p publish
-          cp -r bin/Release/net10.0/win-x64/* publish/
+          cp -r bin/Release/net10.0-windows/win-x64/* publish/
           find publish -name "*.zip" -delete
 
       - name: Create ZIP
