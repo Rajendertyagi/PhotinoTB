@@ -26,8 +26,14 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
   </ItemGroup>
 
-  <!-- Only non-XAML assets need explicit inclusion -->
+  <!-- ✅ Fix entry point + avoid duplicate Page items -->
   <ItemGroup>
+    <ApplicationDefinition Include="Core\App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Remove="Core\App.xaml" /> <!-- Prevent duplicate inclusion -->
+    
     <Content Include="Assets\Fonts\GoogleSans-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
