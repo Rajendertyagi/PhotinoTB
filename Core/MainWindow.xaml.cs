@@ -4,11 +4,11 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Web.WebView2.Wpf;
 using TB.Features;
+using TB.Features.Navigation;  // ✅ Added: Resolves NavigationViewModel
 using TB.Features.Tabs;
 
 namespace TB.Core;
 
-// ⚠️ No base class declaration - XAML defines <Window>, code-behind is partial
 public partial class MainWindow
 {
     public MainViewModel ViewModel { get; }
@@ -44,24 +44,20 @@ public partial class MainWindow
         }
     }
 
-    // Title bar drag
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.Left)
             DragMove();
     }
 
-    // Window controls
     private void BtnMin_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void BtnMax_Click(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 
-    // Navigation
     private void GoBack_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.GoBack();
     private void GoForward_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.GoForward();
     private void Reload_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.Reload();
 
-    // Omnibox
     private void Omnibox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter) return;
@@ -72,13 +68,11 @@ public partial class MainWindow
         Omnibox.Text = url;
     }
 
-    // Tab close
     private void TabClose_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.DataContext is TabViewModel tab)
             tab.Close();
     }
 
-    // Settings (stub for Phase 3)
     private void OpenSettings_Click(object sender, RoutedEventArgs e) { /* Phase 3 */ }
 }
