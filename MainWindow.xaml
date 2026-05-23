@@ -22,8 +22,9 @@
             </StackPanel>
         </Grid>
 
+        <!-- ✅ Correct Property: TabItemsSource -->
         <controls:TabView x:Name="TabView" Grid.Row="1"
-                          ItemsSource="{x:Bind ViewModel.Tabs}"
+                          TabItemsSource="{x:Bind ViewModel.Tabs}"
                           SelectedItem="{x:Bind ViewModel.SelectedTab, Mode=TwoWay}"
                           TabCloseRequested="TabView_TabCloseRequested">
             <controls:TabView.TabItemTemplate>
