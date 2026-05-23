@@ -2,28 +2,27 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     
-    <!-- 1. Disable MSIX packaging -->
+    <!-- 1. The Core Unpackaged Settings -->
     <WindowsPackageType>None</WindowsPackageType>
-    <EnableMsixTooling>false</EnableMsixTooling>
-    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
-    <MrtCoreResourceIndexerSkipGeneration>true</MrtCoreResourceIndexerSkipGeneration>
     
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- 2. FORCE THE WINDOWS APP SDK TO BUNDLE ITSELF -->
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    
+    <!-- 3. Crucial for Portable Assets (Fixes what you were trying to bypass) -->
+    <WindowsAppSDKForceNativeUX>true</WindowsAppSDKForceNativeUX>
+    
+    <!-- 4. Optimize the output for a single portable folder -->
+    <RuntimeIdentifiers>win10-x64;win10-x86;win10-arm64</RuntimeIdentifiers>
+    <SelfContained>true</SelfContained>
+    
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    
-    <!-- 2. Ensure .NET 8 compatibility on runner -->
-    <UseWindowsSdkDesktopFrameworkOnly>true</UseWindowsSdkDesktopFrameworkOnly>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240923002" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
   </ItemGroup>
-
-  <!-- 3. OVERRIDE THE BROKEN TARGET -->
-  <!-- This replaces the MSBuild task that is looking for the missing DLL -->
-  <Target Name="ExpandPriContent" />
-
 </Project>
