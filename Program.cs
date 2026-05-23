@@ -9,18 +9,14 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        // 1. ✅ Initialize Dynamic Dependency (REQUIRED for unpackaged)
-        // 0x00010000 = v1.0.0.0+, fully compatible with SDK 2.x runtime
-        Bootstrap.Initialize(0x00010000);
-
-        // 2. Initialize WinRT COM wrappers for WinUI 3
+        // ✅ SDK 2.1 requires 0x00020000 (v2.0.0.0)
+        Bootstrap.Initialize(0x00020000);
         WinRT.ComWrappersSupport.InitializeComWrappers();
-
-        // 3. Start the application loop
+        
         Application.Start(p =>
         {
-            var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
-            SynchronizationContext.SetSynchronizationContext(context);
+            var ctx = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
+            SynchronizationContext.SetSynchronizationContext(ctx);
             new App();
         });
     }
