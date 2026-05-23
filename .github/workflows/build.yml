@@ -20,20 +20,26 @@ jobs:
       - name: Clean & Restore
         run: |
           Remove-Item -Recurse -Force obj, bin, publish -ErrorAction SilentlyContinue
+          Remove-Item -Force TB-Portable.zip -ErrorAction SilentlyContinue
           dotnet restore
 
       - name: Build
         run: dotnet build TB.csproj --configuration Release --no-restore -r win-x64
 
-      - name: Copy Build Output (Exclude ZIPs)
+      - name: Copy Build Output (No ZIPs)
         run: |
           New-Item -ItemType Directory -Force -Path ./publish
-          # ✅ Copy only necessary files, explicitly exclude any existing .zip files
-          Get-ChildItem -Path ./bin/Release/net10.0-windows/win-x64 -Exclude *.zip | 
+          # ✅ Explicitly filter and copy only non-zip items
+          Get-ChildItem -Path ./bin/Release/net10.0-windows/win-x64 -Filter *.zip -ErrorAction SilentlyContinue | Remove-Item
+          Get-ChildItem -Path ./bin/Release/net10.0-windows/win-x64 | 
+            Where-Object { -not $_.Name.EndsWith('.zip') } | 
             Copy-Item -Destination ./publish -Recurse -Force
 
       - name: Create ZIP
-        run: Compress-Archive -Path publish\* -DestinationPath TB-Portable.zip -Force
+        run: |
+          # ✅ Ensure output zip doesn't exist before creating
+          if (Test-Path TB-Portable.zip) { Remove-Item TB-Portable.zip }
+          Compress-Archive -Path publish\* -DestinationPath TB-Portable.zip -Force
 
       - uses: actions/upload-artifact@v7
         with:
