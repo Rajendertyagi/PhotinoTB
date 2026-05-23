@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection; // ✅ Required for GetRequiredService
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -61,7 +61,6 @@ public sealed partial class MainWindow : Window
 
     private void TabView_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
     {
-        // ✅ Fix: args.Tab is TabViewItem. ViewModel is in DataContext.
         if (args.Tab.DataContext is TabViewModel tab)
         {
             _tabManager.CloseTab(tab.Id);
