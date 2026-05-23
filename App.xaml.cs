@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.ApplicationModel.DynamicDependency;
 using TB.Services;
 using TB.ViewModels;
 
@@ -14,7 +15,12 @@ public partial class App : Application
         .AddSingleton<MainViewModel>()
         .BuildServiceProvider();
 
-    public App() => InitializeComponent();
+    public App()
+    {
+        InitializeComponent();
+        // ✅ SDK 2.1: Use LatestStable constant for unpackaged apps
+        Bootstrap.Initialize(BootstrapConstants.LatestStable);
+    }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
