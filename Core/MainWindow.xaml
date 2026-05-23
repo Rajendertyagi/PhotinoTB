@@ -8,8 +8,9 @@
         Title="TB" Height="600" Width="1000"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        ResizeMode="CanResize"
-        Background="#F8F9FA"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
         SnapsToDevicePixels="True" UseLayoutRounding="True">
 
     <Window.Resources>
@@ -128,14 +129,16 @@
     </Window.Resources>
 
     <Grid>
-        <!-- Invisible Resize Border (4px around edges) -->
-        <Border BorderThickness="4" BorderBrush="Transparent" MouseLeftButtonDown="ResizeBorder_MouseLeftButtonDown"/>
+        <!-- Invisible Resize Border (Exposed by Margin="4" on Content Grid) -->
+        <Border BorderThickness="4" BorderBrush="Transparent" MouseLeftButtonDown="ResizeBorder_MouseLeftButtonDown" Grid.RowSpan="4" Panel.ZIndex="0"/>
 
-        <Grid>
+        <!-- Content Grid (Margin="4" exposes the resize border) -->
+        <Grid Margin="4" Panel.ZIndex="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="32"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="32"/> <!-- Title Bar -->
+                <RowDefinition Height="Auto"/> <!-- Tab Strip -->
+                <RowDefinition Height="Auto"/> <!-- Navigation Bar -->
+                <RowDefinition Height="*"/>    <!-- WebView2 -->
             </Grid.RowDefinitions>
 
             <!-- Custom Title Bar -->
@@ -149,13 +152,16 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <Button Content="─" Width="46" Height="32" Click="BtnMin_Click" Background="Transparent" BorderThickness="0" FontSize="14" Foreground="#3C4043"/>
                         <Button Content="☐" Width="46" Height="32" Click="BtnMax_Click" Background="Transparent" BorderThickness="0" FontSize="12" Foreground="#3C4043"/>
-                        <Button Content="" Width="46" Height="32" Click="BtnClose_Click" Background="Transparent" BorderThickness="0" FontSize="12" Foreground="#3C4043"/>
+                        <Button Content="✕" Width="46" Height="32" Click="BtnClose_Click" Background="Transparent" BorderThickness="0" FontSize="12" Foreground="#3C4043"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
+            <!-- Chrome-like Tabs -->
+            <TabControl x:Name="TabStrip" Grid.Row="1" ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}" SelectionChanged="TabStrip_SelectionChanged" Style="{StaticResource ChromeTabControl}"/>
+
             <!-- Navigation Bar -->
-            <Border Grid.Row="1" Background="#FFFFFF" Padding="8,6" BorderBrush="#E8EAED" BorderThickness="0,0,0,1">
+            <Border Grid.Row="2" Background="#FFFFFF" Padding="8,6" BorderBrush="#E8EAED" BorderThickness="0,0,0,1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -164,17 +170,16 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Content="" Click="GoBack_Click" Margin="0,0,4,0" Width="32" Height="32"/>
+                    <Button Grid.Column="0" Content="◀" Click="GoBack_Click" Margin="0,0,4,0" Width="32" Height="32"/>
                     <Button Grid.Column="1" Content="▶" Click="GoForward_Click" Margin="0,0,4,0" Width="32" Height="32"/>
                     <Button Grid.Column="2" Content="⟳" Click="Reload_Click" Margin="0,0,8,0" Width="32" Height="32"/>
                     <TextBox x:Name="Omnibox" Grid.Column="3" Tag="Search or enter web address" Style="{StaticResource PlaceholderTextBox}" KeyDown="Omnibox_KeyDown" Margin="0,0,8,0"/>
-                    <Button Grid.Column="4" Content="" Click="OpenSettings_Click" Width="32" Height="32"/>
+                    <Button Grid.Column="4" Content="⋮" Click="OpenSettings_Click" Width="32" Height="32"/>
                 </Grid>
             </Border>
 
-            <!-- Chrome Tabs + WebView2 -->
-            <Grid Grid.Row="2">
-                <TabControl x:Name="TabStrip" ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}" SelectionChanged="TabStrip_SelectionChanged" Style="{StaticResource ChromeTabControl}"/>
+            <!-- WebView2 -->
+            <Grid Grid.Row="3">
                 <wv2:WebView2 x:Name="BrowserView" Margin="0,0,0,0" />
             </Grid>
         </Grid>
