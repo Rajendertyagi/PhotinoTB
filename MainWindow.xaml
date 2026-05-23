@@ -7,6 +7,7 @@
         Title="TB Browser">
     <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        
         <muxc:TabView x:Name="AppTabView" TabItemsSource="{x:Bind ViewModel.Tabs, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedTab, Mode=TwoWay}" AddTabButtonClick="AppTabView_AddTabButtonClick" TabCloseRequested="AppTabView_TabCloseRequested" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}">
             <muxc:TabView.TabItemTemplate>
                 <DataTemplate x:DataType="vm:TabViewModel">
@@ -21,6 +22,7 @@
                 </StackPanel>
             </muxc:TabView.TabStripHeader>
         </muxc:TabView>
+        
         <Grid Grid.Row="1" Padding="8,4,8,8" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal" Spacing="4">
@@ -28,6 +30,7 @@
                 <Button x:Name="ForwardBtn" Click="NavBtn_Click" Tag="Forward"><FontIcon Glyph="&#xE72A;"/></Button>
                 <Button x:Name="RefreshBtn" Click="NavBtn_Click" Tag="Refresh"><FontIcon Glyph="&#xE72C;"/></Button>
             </StackPanel>
+            <!-- FIXED: Added ItemTemplate to prevent XamlCompiler crash -->
             <AutoSuggestBox Grid.Column="1" Margin="8,0" Text="{x:Bind ViewModel.NavigationViewModel.AddressBarText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemsSource="{x:Bind ViewModel.NavigationViewModel.Suggestions, Mode=OneWay}" QueryIcon="Find" UpdateTextOnSelect="False" PlaceholderText="Search or enter address" QuerySubmitted="AddressBar_QuerySubmitted" SuggestionChosen="AddressBar_SuggestionChosen" TextChanged="AddressBar_TextChanged">
                 <AutoSuggestBox.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
