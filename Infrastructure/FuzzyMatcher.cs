@@ -5,46 +5,92 @@ using System.Linq;
 namespace TB_Browser.Infrastructure;
 
 /// <summary>
-/// Fuzzy string matching using Levenshtein distance.
-/// Filters results where distance is within the threshold (default 2).
+/// Static utility for fuzzy string matching using Levenshtein distance.
+/// Thread-safe, allocation-optimized for autocomplete scenarios.
 /// </summary>
 public static class FuzzyMatcher
 {
+    /// <summary>
+    /// Filters items by fuzzy match against a query.
+    /// Returns items where Levenshtein distance <= threshold, sorted by relevance.
+    /// </summary>
+    /// <param name="items">Candidate strings to filter</param>
+    /// <param name="query">User input to match against</param>
+    /// <param name="threshold">Max allowed edit distance (default: 2)</param>
+    /// <returns>Filtered list, sorted by ascending distance (best matches first)</returns>
     public static List<string> Filter(IEnumerable<string> items, string query, int threshold = 2)
     {
-        if (string.IsNullOrWhiteSpace(query)) return items.ToList();
-        
-        var results = new List<string>();
+        if (string.IsNullOrWhiteSpace(query))
+            return new List<string>();
+
+        var results = new List<(string Item, int Distance)>();
+        var queryLower = query.ToLowerInvariant();
+
         foreach (var item in items)
         {
-            if (CalculateDistance(item.ToLowerInvariant(), query.ToLowerInvariant()) <= threshold)
-                results.Add(item);
+            if (string.IsNullOrEmpty(item)) continue;
+
+            // Fast path: exact or startswith match (zero cost)
+            var itemLower = item.ToLowerInvariant();
+            if (itemLower == queryLower || itemLower.StartsWith(queryLower))
+            {
+                results.Add((item, 0));
+                continue;
+            }
+
+            var distance = LevenshteinDistance(queryLower, itemLower);
+            if (distance <= threshold)
+                results.Add((item, distance));
         }
-        return results;
+
+        // Sort by distance (best first), then alphabetically for ties
+        return results
+            .OrderBy(r => r.Distance)
+            .ThenBy(r => r.Item, StringComparer.OrdinalIgnoreCase)
+            .Select(r => r.Item)
+            .ToList();
     }
 
-    private static int CalculateDistance(string s, string t)
+    /// <summary>
+    /// Computes Levenshtein edit distance between two strings.
+    /// Uses O(n) space optimization for performance.
+    /// </summary>
+    private static int LevenshteinDistance(string source, string target)
     {
-        int n = s.Length;
-        int m = t.Length;
-        int[,] d = new int[n + 1, m + 1];
+        if (source == target) return 0;
+        if (string.IsNullOrEmpty(source)) return target?.Length ?? 0;
+        if (string.IsNullOrEmpty(target)) return source.Length;
 
-        if (n == 0) return m;
-        if (m == 0) return n;
+        // Ensure source is the shorter string for space optimization
+        if (source.Length > target.Length)
+            (source, target) = (target, source);
 
-        for (int i = 0; i <= n; d[i, 0] = i++) { }
-        for (int j = 0; j <= m; d[0, j] = j++) { }
+        var previousRow = new int[target.Length + 1];
+        var currentRow = new int[target.Length + 1];
 
-        for (int i = 1; i <= n; i++)
+        // Initialize first row
+        for (int j = 0; j <= target.Length; j++)
+            previousRow[j] = j;
+
+        for (int i = 1; i <= source.Length; i++)
         {
-            for (int j = 1; j <= m; j++)
+            currentRow[0] = i;
+
+            for (int j = 1; j <= target.Length; j++)
             {
-                int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
-                d[i, j] = Math.Min(
-                    Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
-                    d[i - 1, j - 1] + cost);
+                var cost = source[i - 1] == target[j - 1] ? 0 : 1;
+                currentRow[j] = Math.Min(
+                    Math.Min(
+                        previousRow[j] + 1,      // Deletion
+                        currentRow[j - 1] + 1),  // Insertion
+                    previousRow[j - 1] + cost    // Substitution
+                );
             }
+
+            // Swap rows for next iteration
+            (previousRow, currentRow) = (currentRow, previousRow);
         }
-        return d[n, m];
+
+        return previousRow[target.Length];
     }
 }
