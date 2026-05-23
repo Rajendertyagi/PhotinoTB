@@ -48,7 +48,7 @@ public partial class App : Application
         {
             var pathResolver = Services!.GetRequiredService<PathResolver>();
             pathResolver.EnsureDirectories();
-            Services.GetRequiredService<DbInitializer>().Initialize();
+            Services!.GetRequiredService<DbInitializer>().Initialize();
             new MainWindow().Activate();
         }
         catch (Exception ex)
