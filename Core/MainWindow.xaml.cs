@@ -9,7 +9,6 @@ using TB.Features.Tabs;
 
 namespace TB.Core;
 
-// ⚠️ No base class - XAML defines <Window>, code-behind is partial
 public partial class MainWindow
 {
     public MainViewModel ViewModel { get; }
@@ -45,7 +44,6 @@ public partial class MainWindow
         catch (Exception ex)
         {
             LogError("WebView2 initialization", ex);
-            // Fallback: show error in omnibox
             Omnibox.Text = $"Error: {ex.Message}";
         }
     }
@@ -85,38 +83,34 @@ public partial class MainWindow
         }
     }
 
-    // Title bar drag
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.Left)
             DragMove();
     }
 
-    // Window controls
     private void BtnMin_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void BtnMax_Click(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 
-    // Navigation
     private void GoBack_Click(object sender, RoutedEventArgs e)
     {
         try { BrowserView.CoreWebView2?.GoBack(); }
-        catch (Exception ex) => LogError("GoBack", ex);
+        catch (Exception ex) { LogError("GoBack", ex); }
     }
 
     private void GoForward_Click(object sender, RoutedEventArgs e)
     {
         try { BrowserView.CoreWebView2?.GoForward(); }
-        catch (Exception ex) => LogError("GoForward", ex);
+        catch (Exception ex) { LogError("GoForward", ex); }
     }
 
     private void Reload_Click(object sender, RoutedEventArgs e)
     {
         try { BrowserView.CoreWebView2?.Reload(); }
-        catch (Exception ex) => LogError("Reload", ex);
+        catch (Exception ex) { LogError("Reload", ex); }
     }
 
-    // Omnibox
     private void Omnibox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || sender is not TextBox tb) return;
@@ -138,7 +132,6 @@ public partial class MainWindow
         }
     }
 
-    // Tab close
     private void TabClose_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -146,20 +139,17 @@ public partial class MainWindow
             if (sender is Button btn && btn.DataContext is TabViewModel tab)
                 tab.Close();
         }
-        catch (Exception ex) => LogError("TabClose", ex);
+        catch (Exception ex) { LogError("TabClose", ex); }
     }
 
-    // Settings stub
     private void OpenSettings_Click(object sender, RoutedEventArgs e) { /* Phase 3 */ }
 
-    // Cleanup
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
         try { BrowserView?.Dispose(); }
         catch { /* Ignore cleanup errors */ }
     }
 
-    // Helper: Log errors to file + debug console
     private static void LogError(string context, Exception ex)
     {
         var message = $"[{DateTime.Now:HH:mm:ss}] {context}: {ex.Message}\n{ex}";
