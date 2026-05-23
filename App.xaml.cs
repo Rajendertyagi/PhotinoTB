@@ -57,16 +57,4 @@ public partial class App : Application
             Environment.Exit(1);
         }
     }
-
-    // FIXED: Changed AppLifecycleEventArgs to WindowEventArgs
-    protected override void OnClosed(object sender, WindowEventArgs e)
-    {
-        try
-        {
-            Services?.GetService<BookmarkService>()?.FlushAsync().Wait();
-            Services?.GetService<HistoryService>()?.FlushAsync().Wait();
-        }
-        catch (Exception ex) { LoggingService.Error("Shutdown error", ex); }
-        base.OnClosed(sender, e);
-    }
 }
