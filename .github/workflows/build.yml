@@ -22,19 +22,29 @@ jobs:
     steps:
       - name: 📦 Checkout code
         uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive
+          fetch-depth: 0
 
       - name: ⚙️ Setup .NET 10
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
-      - name:  Restore Workloads & Dependencies
+      - name: 🔁 Configure Git for HTTPS (Prevent Auth Prompts)
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global credential.helper store
+        shell: pwsh
+
+      - name: 📥 Restore Workloads & Dependencies
         run: |
           dotnet workload restore
           dotnet restore
         shell: pwsh
 
-      - name:  Clean Build Artifacts
+      - name: 🧹 Clean Build Artifacts
         run: dotnet clean -c ${{ env.CONFIGURATION }}
         shell: pwsh
 
@@ -78,7 +88,7 @@ jobs:
           Get-ChildItem -Directory -Recurse | Where-Object { $_.GetFileSystemInfos().Count -eq 0 } | Remove-Item -Force -Recurse
         shell: pwsh
 
-      - name:  Create Minimal Zip
+      - name: 📦 Create Minimal Zip
         run: Compress-Archive -Path publish\* -DestinationPath TB-Browser-Minimal.zip -Force
         shell: pwsh
 
