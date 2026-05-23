@@ -4,8 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:wv2="using:Microsoft.Web.WebView2.WinUI"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d"
     Title="TB">
     <Grid x:Name="RootGrid">
@@ -15,7 +15,6 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Custom Title Bar -->
         <Grid x:Name="TitleBar" Background="{ThemeResource SystemControlAcrylicWindowBrush}" Padding="8,4" PointerPressed="TitleBar_PointerPressed">
             <TextBlock Text="TB" FontSize="12" VerticalAlignment="Center" Margin="4,0,0,0"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -25,7 +24,6 @@
             </StackPanel>
         </Grid>
 
-        <!-- Navigation Bar -->
         <Grid Grid.Row="1" Padding="8,4" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -41,14 +39,12 @@
             <Button Grid.Column="4" Content="⋮" Click="OpenSettings_Click"/>
         </Grid>
 
-        <!-- Tabs -->
         <muxc:TabView x:Name="TabStrip" Grid.Row="2" AddTabButtonClick="TabStrip_AddTabButtonClick" TabCloseRequested="TabStrip_TabCloseRequested">
             <muxc:TabView.TabStripHeader>
                 <Grid x:Name="TabDragRegion" Width="200"/>
             </muxc:TabView.TabStripHeader>
         </muxc:TabView>
 
-        <!-- WebView2 (Phase 1: single shared instance) -->
         <wv2:WebView2 x:Name="BrowserView" Grid.Row="2" Margin="0,0,0,0"/>
     </Grid>
 </Window>
