@@ -39,12 +39,11 @@
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 
-  <!-- XAML Compilation -->
+  <!-- XAML Compilation: Update only (SDK auto-includes Pages) -->
   <ItemGroup>
     <Page Update="**\*.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="**\*.xaml" Exclude="bin\**\*.xaml;obj\**\*.xaml" />
   </ItemGroup>
 </Project>
