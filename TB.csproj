@@ -7,13 +7,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     
-    <!-- Unpackaged WinUI 3 Configuration -->
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>true</EnableMsixTooling>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    
-    <!-- ✅ WinUI 3 XAML Compiler: Prevents App.g.i.cs from auto-generating duplicate Program/Main -->
-    <DisableXamlGenerateStart>true</DisableXamlGenerateStart>
   </PropertyGroup>
 
   <ItemGroup>
