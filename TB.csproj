@@ -3,36 +3,32 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>TB_Browser</RootNamespace>
-    <AssemblyName>TB-Browser</AssemblyName>
-    <Platforms>x64</Platforms>
-    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <RootNamespace>TB</RootNamespace>
+    <AssemblyName>TB</AssemblyName>
     <Nullable>enable</Nullable>
-    <LangVersion>14</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>14</LangVersion>
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <SelfContained>false</SelfContained>
-    <PublishSingleFile>false</PublishSingleFile>
-    <PublishTrimmed>false</PublishTrimmed>
-    <!-- REQUIRED: WinUI 3 source generators require unsafe code support -->
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateLibraryLayout>false</GenerateLibraryLayout>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
-    <!-- ADDED: Dependency Injection package (was missing) -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="**\*.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
+    <Content Include="Assets\Fonts\GoogleSans-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Page Include="Core\App.xaml" SubType="Designer" Generator="MSBuild:Compile" />
+    <Page Include="Core\MainWindow.xaml" SubType="Designer" Generator="MSBuild:Compile" />
+    <Page Include="UI\Styles\AppStyles.xaml" SubType="Designer" Generator="MSBuild:Compile" />
   </ItemGroup>
 </Project>
