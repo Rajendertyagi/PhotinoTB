@@ -12,7 +12,8 @@
     <WindowsPackageType>None</WindowsPackageType>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <GenerateLibraryLayout>false</GenerateLibraryLayout>
-    <EnableMsixTooling>false</EnableMsixTooling> <!-- ✅ ADDED: Fixes XamlCompiler crash -->
+    <EnableMsixTooling>false</EnableMsixTooling>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers> <!-- ✅ Fixes WebView2 asset resolution -->
   </PropertyGroup>
 
   <ItemGroup>
