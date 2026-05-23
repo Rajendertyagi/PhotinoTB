@@ -22,13 +22,13 @@ jobs:
           dotnet restore
 
       - name: Build
-        run: dotnet build TB.csproj --configuration Release --no-restore
+        run: dotnet build TB.csproj --configuration Release --no-restore -r win-x64
 
-      - name: Publish
+      - name: Publish Windows
         run: |
-          dotnet publish TB.csproj -c Release --self-contained false
+          dotnet publish TB.csproj -c Release -r win-x64 --self-contained false
           mkdir -p publish
-          cp -r bin/Release/net10.0/* publish/
+          cp -r bin/Release/net10.0/win-x64/* publish/
           find publish -name "*.zip" -delete
 
       - name: Create ZIP
