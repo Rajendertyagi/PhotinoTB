@@ -9,7 +9,6 @@
     
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>true</EnableMsixTooling>
-    <!-- ✅ REMOVED: <UseWindowsSdkDesktopFrameworkOnly> (breaks WinUI 3 XAML compiler) -->
   </PropertyGroup>
 
   <ItemGroup>
