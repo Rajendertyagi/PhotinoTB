@@ -47,7 +47,6 @@ jobs:
           -o ./publish
           -p:EnableWindowsTargeting=true
           -p:XamlDiagnosticLevel=Verbose
-          -p:WindowsSdkPackageVersion=10.0.26100.1742
         shell: pwsh
 
       - name: 🧹 Strip Runtime & SDK Files for Minimal Build
