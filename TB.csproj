@@ -9,18 +9,19 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>14</LangVersion>
     <UseWinUI>true</UseWinUI>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+
+    <!-- ✅ Official WinUI 3 CI Properties (Microsoft Docs) -->
     <WindowsPackageType>None</WindowsPackageType>
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <GenerateLibraryLayout>false</GenerateLibraryLayout>
     <EnableMsixTooling>false</EnableMsixTooling>
     <DisableWinUIXamlDiagnostics>true</DisableWinUIXamlDiagnostics>
-    <!-- ✅ Official CI bypass for MSB4062 ExpandPriContent -->
-    <DisablePriGeneration>true</DisablePriGeneration>
-    <WindowsAppSdkBundleEnable>false</WindowsAppSdkBundleEnable>
+    <_SkipGeneratePriResource>true</_SkipGeneratePriResource>
     <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
-    <DisableMSIXPriGeneration>true</DisableMSIXPriGeneration>
+    <WindowsAppSdkBundleEnable>false</WindowsAppSdkBundleEnable>
+    <DisablePriGeneration>true</DisablePriGeneration>
+    <GenerateLibraryLayout>false</GenerateLibraryLayout>
     <WindowsAppSdkPriGenDisabled>true</WindowsAppSdkPriGenDisabled>
-    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
