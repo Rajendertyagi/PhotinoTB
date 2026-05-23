@@ -11,7 +11,7 @@
     <UseWinUI>true</UseWinUI>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
 
-    <!-- ✅ Official Unpackaged App Properties -->
+    <!-- ✅ Unpackaged CI Properties -->
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
     <DisableWinUIXamlDiagnostics>true</DisableWinUIXamlDiagnostics>
