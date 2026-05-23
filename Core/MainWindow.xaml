@@ -129,10 +129,10 @@
     </Window.Resources>
 
     <Grid>
-        <!-- Invisible Resize Border (Exposed by Margin="4" on Content Grid) -->
+        <!-- Invisible Resize Border -->
         <Border BorderThickness="4" BorderBrush="Transparent" MouseLeftButtonDown="ResizeBorder_MouseLeftButtonDown" Grid.RowSpan="4" Panel.ZIndex="0"/>
 
-        <!-- Content Grid (Margin="4" exposes the resize border) -->
+        <!-- Content Grid -->
         <Grid Margin="4" Panel.ZIndex="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="32"/> <!-- Title Bar -->
@@ -158,7 +158,13 @@
             </Border>
 
             <!-- Chrome-like Tabs -->
-            <TabControl x:Name="TabStrip" Grid.Row="1" ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}" SelectionChanged="TabStrip_SelectionChanged" Style="{StaticResource ChromeTabControl}"/>
+            <TabControl x:Name="TabStrip" Grid.Row="1" ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}" SelectionChanged="TabStrip_SelectionChanged" Style="{StaticResource ChromeTabControl}">
+                <TabControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Title}" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="150" VerticalAlignment="Center" Foreground="#3C4043"/>
+                    </DataTemplate>
+                </TabControl.ItemTemplate>
+            </TabControl>
 
             <!-- Navigation Bar -->
             <Border Grid.Row="2" Background="#FFFFFF" Padding="8,6" BorderBrush="#E8EAED" BorderThickness="0,0,0,1">
