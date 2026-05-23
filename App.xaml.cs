@@ -1,7 +1,6 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Windows.ApplicationModel; // Fixes AppLifecycleEventArgs
 using TB_Browser.Infrastructure;
 using TB_Browser.Repositories;
 using TB_Browser.Services;
@@ -17,7 +16,6 @@ public partial class App : Application
     {
         InitializeComponent();
         LoggingService.Init();
-        LoggingService.Info("TB-Browser starting...");
         ConfigureDI();
     }
 
@@ -48,36 +46,26 @@ public partial class App : Application
     {
         try
         {
-            LoggingService.Info("App launched. Initializing environment...");
             var pathResolver = Services!.GetRequiredService<PathResolver>();
             pathResolver.EnsureDirectories();
-            var dbInit = Services.GetRequiredService<DbInitializer>();
-            dbInit.Initialize();
-            var mainWindow = new MainWindow();
-            mainWindow.Activate();
-            LoggingService.Info("MainWindow activated. Startup complete.");
+            Services.GetRequiredService<DbInitializer>().Initialize();
+            new MainWindow().Activate();
         }
         catch (Exception ex)
         {
             LoggingService.Error("Critical startup failure", ex);
-            System.Environment.Exit(1);
+            Environment.Exit(1);
         }
     }
 
-    protected override void OnClosed(object sender, AppLifecycleEventArgs args)
+    protected override void OnClosed(object sender, WindowEventArgs e)
     {
         try
         {
-            var bookmarkService = Services?.GetService<BookmarkService>();
-            var historyService = Services?.GetService<HistoryService>();
-            if (bookmarkService != null) bookmarkService.FlushAsync().Wait();
-            if (historyService != null) historyService.FlushAsync().Wait();
-            LoggingService.Info("App closed cleanly.");
+            Services?.GetService<BookmarkService>()?.FlushAsync().Wait();
+            Services?.GetService<HistoryService>()?.FlushAsync().Wait();
         }
-        catch (Exception ex)
-        {
-            LoggingService.Error("Shutdown error", ex);
-        }
-        base.OnClosed(sender, args);
+        catch (Exception ex) { LoggingService.Error("Shutdown error", ex); }
+        base.OnClosed(sender, e);
     }
 }
