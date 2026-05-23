@@ -34,8 +34,8 @@ jobs:
           dotnet restore
         shell: pwsh
 
-      - name: 🧹 Clean Build Artifacts
-        run: dotnet clean -c Release
+      - name:  Clean Build Artifacts
+        run: dotnet clean -c ${{ env.CONFIGURATION }}
         shell: pwsh
 
       - name: 🔨 Build & Publish (Framework-Dependent)
@@ -47,11 +47,12 @@ jobs:
           -o ./publish
           -p:EnableWindowsTargeting=true
           -p:XamlDiagnosticLevel=Verbose
+          -p:WindowsSdkPackageVersion=10.0.26100.1742
         shell: pwsh
 
-      - name:  Strip Runtime & SDK Files for Minimal Build
+      - name: 🧹 Strip Runtime & SDK Files for Minimal Build
         run: |
-          cd publish
+          Set-Location ./publish
           
           $keep = @(
             "TB-Browser.exe",
@@ -78,7 +79,7 @@ jobs:
           Get-ChildItem -Directory -Recurse | Where-Object { $_.GetFileSystemInfos().Count -eq 0 } | Remove-Item -Force -Recurse
         shell: pwsh
 
-      - name: 📦 Create Minimal Zip
+      - name:  Create Minimal Zip
         run: Compress-Archive -Path publish\* -DestinationPath TB-Browser-Minimal.zip -Force
         shell: pwsh
 
