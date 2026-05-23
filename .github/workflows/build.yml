@@ -31,13 +31,13 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: 📥 Install Windows Desktop Workload & Restore
+      - name: 📥 Install Workload & Restore
         run: |
           dotnet workload install windows-desktop
           dotnet restore
         shell: pwsh
 
-      - name: 🧹 Force Clean Stale Artifacts
+      - name: 🧹 Clean Stale Artifacts
         run: |
           Remove-Item -Recurse -Force obj, bin -ErrorAction SilentlyContinue
           dotnet clean -c ${{ env.CONFIGURATION }}
@@ -59,22 +59,14 @@ jobs:
           -o ./publish
         shell: pwsh
 
-      - name: 🧹 Strip Debug Files & Unused Runtimes
-        run: |
-          Set-Location ./publish
-          # Remove only safe-to-delete files without breaking WinUI 3 XAML/WinRT loading
-          Get-ChildItem -Recurse -Include *.pdb, *.xml, *.dev.json, *.nuspec | Remove-Item -Force -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force runtimes -ErrorAction SilentlyContinue
+      - name: 📦 Zip Full Output
+        run: Compress-Archive -Path publish\* -DestinationPath TB-Browser.zip -Force
         shell: pwsh
 
-      - name: 📦 Create Minimal Zip
-        run: Compress-Archive -Path publish\* -DestinationPath TB-Browser-Minimal.zip -Force
-        shell: pwsh
-
-      - name: 📤 Upload Minimal Artifact
+      - name: 📤 Upload Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: TB-Browser-Minimal
-          path: TB-Browser-Minimal.zip
+          name: TB-Browser
+          path: TB-Browser.zip
           if-no-files-found: error
           retention-days: 30
