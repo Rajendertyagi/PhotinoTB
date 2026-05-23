@@ -12,8 +12,8 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     
-    <!-- ✅ Prevents App.g.i.cs from auto-generating a conflicting Program/Main -->
-    <GenerateProgramFile>false</GenerateProgramFile>
+    <!-- ✅ WinUI 3 XAML Compiler: Prevents App.g.i.cs from auto-generating duplicate Program/Main -->
+    <DisableXamlGenerateStart>true</DisableXamlGenerateStart>
   </PropertyGroup>
 
   <ItemGroup>
