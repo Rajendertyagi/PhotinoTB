@@ -17,29 +17,27 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with: { dotnet-version: '10.0.x' }
 
-      - name: Clean & Restore
+      - name: Clean Everything
         run: |
           Remove-Item -Recurse -Force obj, bin, publish -ErrorAction SilentlyContinue
-          Remove-Item -Force TB-Portable.zip -ErrorAction SilentlyContinue
+          Get-ChildItem -Recurse -Filter *.zip | Remove-Item -Force
           dotnet restore
 
       - name: Build
         run: dotnet build TB.csproj --configuration Release --no-restore -r win-x64
 
-      - name: Copy Build Output (No ZIPs)
+      - name: Copy to Publish (Exclude ZIPs)
         run: |
           New-Item -ItemType Directory -Force -Path ./publish
-          # ✅ Explicitly filter and copy only non-zip items
-          Get-ChildItem -Path ./bin/Release/net10.0-windows/win-x64 -Filter *.zip -ErrorAction SilentlyContinue | Remove-Item
           Get-ChildItem -Path ./bin/Release/net10.0-windows/win-x64 | 
-            Where-Object { -not $_.Name.EndsWith('.zip') } | 
+            Where-Object { $_.Extension -ne '.zip' } | 
             Copy-Item -Destination ./publish -Recurse -Force
 
-      - name: Create ZIP
+      - name: Create Final ZIP (in root, not publish)
         run: |
-          # ✅ Ensure output zip doesn't exist before creating
-          if (Test-Path TB-Portable.zip) { Remove-Item TB-Portable.zip }
           Compress-Archive -Path publish\* -DestinationPath TB-Portable.zip -Force
+          Write-Host "Final ZIP contents:"
+          Get-ChildItem TB-Portable.zip | Select-Object Name, Length
 
       - uses: actions/upload-artifact@v7
         with:
