@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
     tags:
-      - 'v*' # Triggers the release process when you push a tag like v1.0.0
-  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+      - 'v*' # Triggers the automatic release pipeline when a version tag like v1.0.0 is pushed
+  workflow_dispatch: # Allows you to trigger this workflow manually from the GitHub Actions UI
 
 permissions:
-  contents: write # Required so the runner can create a release and upload assets
+  contents: write # Grants the runner write permissions to create releases and attach assets
 
 jobs:
   build:
@@ -21,24 +21,25 @@ jobs:
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x' # Uses the .NET 8 runtime to build your target framework
+        dotnet-version: '8.0.x' # Standardizes on the .NET 8 SDK framework line
 
     - name: Publish Portable App (Self-Contained)
+      # Setting AppxPackageDir to a temporary directory tricks the compiler out of looking for non-existent local VS components
       run: |
-        dotnet publish -c Release -r win-x64 --self-contained true -p:Platform=x64 -o ./portable-build
+        dotnet publish -c Release -r win-x64 --self-contained true -p:Platform=x64 -p:AppxPackageDir="./dummy_out" -o ./portable-build
 
     - name: Zip the Output Folder
       shell: pwsh
       run: |
         Compress-Archive -Path ./portable-build/* -DestinationPath ./WinUI3-Portable-x64.zip
 
-    - name: Upload Build Artifact (Internal GitHub Storage)
+    - name: Upload Build Artifact (Internal Actions Storage)
       uses: actions/upload-artifact@v4
       with:
         name: Portable-App-Package
         path: ./WinUI3-Portable-x64.zip
 
-    # This step only runs if you pushed a tag (e.g., git tag v1.0.0 && git push origin v1.0.0)
+    # This deployment block only triggers when you push an explicit release tag to your git history
     - name: Create Official GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
