@@ -2,26 +2,28 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    
-    <!-- 1. Core Unpackaged & Self-Contained Settings -->
-    <WindowsPackageType>None</WindowsPackageType>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <WindowsAppSDKForceNativeUX>true</WindowsAppSDKForceNativeUX>
-    
-    <!-- 2. TRICK MSBUILD TO USE THE NUGET PRI TOOLING ON THE CLI RUNNER -->
-    <EnableMsixTooling>true</EnableMsixTooling>
-    
-    <!-- 3. RIDs and Portable Target Settings -->
-    <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
-    <SelfContained>true</SelfContained>
-    
+    <RootNamespace>TB</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    
+    <!-- ✅ Unpackaged WinUI 3 -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <MrtCoreResourceIndexerSkipGeneration>true</MrtCoreResourceIndexerSkipGeneration>
+    <UseWindowsSdkDesktopFrameworkOnly>true</UseWindowsSdkDesktopFrameworkOnly>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240923002" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260508005" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Fonts\GoogleSans-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>
