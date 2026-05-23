@@ -14,7 +14,7 @@ public partial class App : Application
         .AddSingleton<MainViewModel>()
         .BuildServiceProvider();
 
-    public App() => InitializeComponent(); // ✅ Bootstrap now handled in Program.cs
+    public App() => InitializeComponent();
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
