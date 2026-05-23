@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinUI;
 using TB.Features;
 using TB.Features.Tabs;
 
@@ -15,6 +16,7 @@ public sealed partial class MainWindow : Window
 {
     public MainViewModel ViewModel { get; }
     private AppWindow? _appWindow;
+    private WebView2? _webView;
 
     public MainWindow()
     {
@@ -28,10 +30,16 @@ public sealed partial class MainWindow : Window
 
     private async Task InitializeWebViewAsync()
     {
-        await BrowserView.EnsureCoreWebView2Async();
-        var core = BrowserView.CoreWebView2;
+        // 1. Instantiate WinUI 3 WebView2 control programmatically
+        _webView = new WebView2();
+        WebViewContainer.Children.Add(_webView);
+
+        // 2. Initialize CoreWebView2 environment
+        await _webView.EnsureCoreWebView2Async();
+        var core = _webView.CoreWebView2;
         if (core == null) return;
 
+        // 3. Wire navigation events
         core.NavigationStarting += (s, e) => ViewModel.OnNavigationStarting();
         core.NavigationCompleted += (s, e) => ViewModel.OnNavigationCompleted(s.Source, s.DocumentTitle);
         core.NewWindowRequested += (s, e) => { e.Handled = true; ViewModel.OpenInNewTab(e.Uri); };
@@ -51,9 +59,9 @@ public sealed partial class MainWindow : Window
     }
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void GoBack_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.GoBack();
-    private void GoForward_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.GoForward();
-    private void Reload_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.Reload();
+    private void GoBack_Click(object sender, RoutedEventArgs e) => _webView?.CoreWebView2?.GoBack();
+    private void GoForward_Click(object sender, RoutedEventArgs e) => _webView?.CoreWebView2?.GoForward();
+    private void Reload_Click(object sender, RoutedEventArgs e) => _webView?.CoreWebView2?.Reload();
     private void OpenSettings_Click(object sender, RoutedEventArgs e) { /* Phase 3 */ }
 
     private void Omnibox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
@@ -61,7 +69,7 @@ public sealed partial class MainWindow : Window
         var query = args.QueryText?.Trim();
         if (string.IsNullOrEmpty(query)) return;
         var url = query.Contains(".") && !query.StartsWith("http") ? $"https://{query}" : $"https://www.google.com/search?q={Uri.EscapeDataString(query)}";
-        BrowserView.CoreWebView2?.Navigate(url);
+        _webView?.CoreWebView2?.Navigate(url);
     }
 
     private void TabStrip_AddTabButtonClick(Microsoft.UI.Xaml.Controls.TabView sender, object args) => ViewModel.AddTab();
