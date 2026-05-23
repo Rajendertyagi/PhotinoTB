@@ -27,8 +27,5 @@
     <Content Include="Assets\Fonts\GoogleSans-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Page Include="Core\App.xaml" SubType="Designer" Generator="MSBuild:Compile" />
-    <Page Include="Core\MainWindow.xaml" SubType="Designer" Generator="MSBuild:Compile" />
-    <Page Include="UI\Styles\AppStyles.xaml" SubType="Designer" Generator="MSBuild:Compile" />
   </ItemGroup>
 </Project>
