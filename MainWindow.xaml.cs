@@ -1,11 +1,12 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection; // ✅ Fixes CS1061/CS0308
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.Web.WebView2.Core; // ADDED: Fixes CS0246
+using Microsoft.Web.WebView2.Core;
 using TB_Browser.Services;
 using TB_Browser.ViewModels;
 
@@ -25,15 +26,19 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTabView);
         _appWindow = this.AppWindow;
         _presenter = _appWindow?.Presenter as OverlappedPresenter;
-        Loaded += MainWindow_Loaded;
         Closed += MainWindow_Closed;
+        _ = InitializeWebViewAsync(); // ✅ Replaces invalid Window.Loaded
     }
 
-    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    private async Task InitializeWebViewAsync()
     {
         await BrowserWebView.EnsureCoreWebView2Async();
-        BrowserWebView.NavigationStarting += OnNavigationStarting;
-        BrowserWebView.NavigationCompleted += OnNavigationCompleted;
+        var core = BrowserWebView.CoreWebView2;
+        if (core == null) return;
+
+        core.NavigationStarting += (s, e) => OnNavigationStarting(s, e);
+        core.NavigationCompleted += (s, e) => OnNavigationCompleted(s, e);
+
         var settingsService = App.Services!.GetRequiredService<SettingsService>();
         await settingsService.LoadAsync();
         ViewModel.InitializeTabs();
@@ -45,6 +50,7 @@ public sealed partial class MainWindow : Window
         App.Services?.GetService<HistoryService>()?.FlushAsync().Wait();
     }
 
+    // ✅ Correct signature: CoreWebView2 sender
     private void OnNavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
     {
         if (ViewModel.SelectedTab != null) ViewModel.SelectedTab.IsBusy = true;
@@ -75,6 +81,8 @@ public sealed partial class MainWindow : Window
         if (!url.StartsWith("http://") && !url.StartsWith("https://") && !url.Contains("."))
             url = $"https://www.google.com/search?q={Uri.EscapeDataString(url)}";
         else if (!url.StartsWith("http")) url = "https://" + url;
-        if (BrowserWebView.CoreWebView2 != null) BrowserWebView.Navigate(url);
+
+        // ✅ Navigate exists on CoreWebView2, not the WebView2 control
+        if (BrowserWebView.CoreWebView2 != null) BrowserWebView.CoreWebView2.Navigate(url);
     }
 }
