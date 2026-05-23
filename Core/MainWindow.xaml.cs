@@ -4,10 +4,9 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.Web.WebView2.Core;
-using TB.Features.Navigation;
+using TB.Features;
 using TB.Features.Tabs;
 
 namespace TB.Core;
@@ -40,24 +39,16 @@ public sealed partial class MainWindow : Window
 
     private void TitleBar_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        var point = e.GetCurrentPoint((UIElement)sender);
-        if (point.Properties.IsLeftButtonPressed)
-        {
+        if (e.GetCurrentPoint((UIElement)sender).Properties.IsLeftButtonPressed)
             InputNonClientPointerSource.GetForWindowId(this.AppWindow.Id).StartDraggingPointerDrag();
-        }
     }
 
     private void BtnMin_Click(object sender, RoutedEventArgs e) => _appWindow?.Minimize();
-
     private void BtnMax_Click(object sender, RoutedEventArgs e)
     {
         if (_appWindow?.Presenter is OverlappedPresenter op)
-        {
-            if (op.IsMaximized) op.Restore();
-            else op.Maximize();
-        }
+            (op.IsMaximized ? op.Restore() : op.Maximize());
     }
-
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 
     private void GoBack_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.GoBack();
@@ -69,23 +60,13 @@ public sealed partial class MainWindow : Window
     {
         var query = args.QueryText?.Trim();
         if (string.IsNullOrEmpty(query)) return;
-
-        var url = query;
-        if (!url.StartsWith("http://") && !url.StartsWith("https://"))
-        {
-            url = url.Contains(".") ? $"https://{url}" : $"https://www.google.com/search?q={Uri.EscapeDataString(url)}";
-        }
+        var url = query.Contains(".") && !query.StartsWith("http") ? $"https://{query}" : $"https://www.google.com/search?q={Uri.EscapeDataString(query)}";
         BrowserView.CoreWebView2?.Navigate(url);
     }
 
     private void TabStrip_AddTabButtonClick(Microsoft.UI.Xaml.Controls.TabView sender, object args) => ViewModel.AddTab();
-
     private void TabStrip_TabCloseRequested(Microsoft.UI.Xaml.Controls.TabView sender, Microsoft.UI.Xaml.Controls.TabViewTabCloseRequestedEventArgs args)
     {
-        // Simplified: cast DataContext and call Close() directly
-        if (args.Tab.DataContext is TabViewModel tab)
-        {
-            tab.Close();
-        }
+        if (args.Tab.DataContext is TabViewModel tab) tab.Close();
     }
 }
