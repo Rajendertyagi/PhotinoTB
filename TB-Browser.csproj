@@ -1,21 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <!-- Supported TFM for WinUI 3 C# apps -->
+    
+    <!-- TFM: Use a supported Windows family with available NuGet refs -->
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     
-    <!-- CI targeting: allows builds without full Windows SDK installed -->
+    <!-- CRITICAL: Use a WindowsSdkPackageVersion that EXISTS on NuGet -->
+    <!-- Per WinAppSDK 1.6 docs: must match available preview version [[23]] -->
+    <WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
+    
+    <!-- Allow builds on machines without full Windows SDK installed -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     
-    <!-- WinUI 3 Unpackaged Configuration (CRITICAL) -->
+    <!-- WinUI 3 Unpackaged Configuration (Microsoft Docs Standard) [[2]] -->
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
-    <!-- REMOVED: EnableMsixTooling (causes XamlCompiler target conflicts) -->
-    
-    <!-- XAML Compiler CI Workaround (Per Microsoft Troubleshooting Docs) -->
-    <DisableXamlCompilerBinarySerialization>true</DisableXamlCompilerBinarySerialization>
-    <GenerateLibraryLayout>false</GenerateLibraryLayout>
+    <!-- REMOVED: EnableMsixTooling (causes XamlCompiler target conflicts for unpackaged) -->
     
     <RootNamespace>TB_Browser</RootNamespace>
     <AssemblyName>TB-Browser</AssemblyName>
