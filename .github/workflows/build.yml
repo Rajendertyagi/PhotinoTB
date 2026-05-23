@@ -1,13 +1,12 @@
-name: Build TB (Phase 1)
+name: Build TB (Avalonia Phase 1)
 on: [push, workflow_dispatch]
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -17,37 +16,26 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with: { dotnet-version: '10.0.x' }
 
-      - name: Clean Everything
+      - name: Clean & Restore
         run: |
-          Remove-Item -Recurse -Force obj, bin, publish -ErrorAction SilentlyContinue
-          Get-ChildItem -Recurse -Filter *.zip | Remove-Item -Force
+          rm -rf obj bin publish
           dotnet restore
 
       - name: Build
-        run: dotnet build TB.csproj --configuration Release --no-restore -r win-x64
+        run: dotnet build TB.csproj --configuration Release --no-restore
 
-      - name: Copy to Publish (Exclude ZIPs)
+      - name: Publish Windows
         run: |
-          New-Item -ItemType Directory -Force -Path ./publish
-          Get-ChildItem -Path ./bin/Release/net10.0-windows/win-x64 | 
-            Where-Object { $_.Extension -ne '.zip' } | 
-            Copy-Item -Destination ./publish -Recurse -Force
+          dotnet publish TB.csproj -c Release -r win-x64 --self-contained false
+          mkdir -p publish
+          cp -r bin/Release/net10.0/win-x64/* publish/
+          find publish -name "*.zip" -delete
 
-      - name: 🧹 Remove any nested ZIPs from publish folder
+      - name: Create ZIP
         run: |
-          $nestedZips = Get-ChildItem -Path ./publish -Recurse -Filter *.zip
-          if ($nestedZips) {
-            Write-Host "Found $($nestedZips.Count) nested zip(s) – removing them."
-            $nestedZips | Remove-Item -Force
-          } else {
-            Write-Host "No nested zips found."
-          }
-
-      - name: Create Final ZIP (in root, not publish)
-        run: |
-          Compress-Archive -Path publish\* -DestinationPath TB-Portable.zip -Force
-          Write-Host "Final ZIP contents:"
-          Get-ChildItem TB-Portable.zip | Select-Object Name, Length
+          cd publish
+          zip -r ../TB-Portable.zip .
+          cd ..
 
       - uses: actions/upload-artifact@v7
         with:
