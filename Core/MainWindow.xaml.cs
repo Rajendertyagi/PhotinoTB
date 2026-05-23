@@ -7,8 +7,8 @@ using TB.Features;
 using TB.Features.Tabs;
 
 namespace TB.Core;
-
-public partial class MainWindow : Window
+// ⚠️ Remove ": Window" to avoid CS0263 conflict with ui:UiWindow in XAML
+public partial class MainWindow
 {
     public MainViewModel ViewModel { get; }
 
@@ -23,19 +23,20 @@ public partial class MainWindow : Window
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         await BrowserView.EnsureCoreWebView2Async();
-        var core = BrowserView.CoreWebView2;
-        if (core != null && ViewModel.SelectedTab != null)
+        if (BrowserView.CoreWebView2 != null && ViewModel.SelectedTab != null)
         {
-            core.Navigate(ViewModel.SelectedTab.Url);
-            core.NavigationCompleted += (s, args) => 
-                ViewModel.SelectedTab!.Title = string.IsNullOrEmpty(core.DocumentTitle) ? ViewModel.SelectedTab.Url : core.DocumentTitle;
+            BrowserView.CoreWebView2.Navigate(ViewModel.SelectedTab.Url);
+            BrowserView.CoreWebView2.NavigationCompleted += (s, args) => 
+                ViewModel.SelectedTab!.Title = string.IsNullOrEmpty(BrowserView.CoreWebView2.DocumentTitle) 
+                ? ViewModel.SelectedTab.Url 
+                : BrowserView.CoreWebView2.DocumentTitle;
         }
     }
 
     private async void TabStrip_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (BrowserView.CoreWebView2 == null) return;
-        if (e.AddedItems.Count > 0 && e.AddedItems[0] is TabViewModel tab)
+        if (BrowserView.CoreWebView2 == null || e.AddedItems.Count == 0) return;
+        if (e.AddedItems[0] is TabViewModel tab)
         {
             await BrowserView.EnsureCoreWebView2Async();
             BrowserView.CoreWebView2.Navigate(tab.Url);
@@ -48,18 +49,17 @@ public partial class MainWindow : Window
 
     private void Omnibox_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Enter || sender is not System.Windows.Controls.TextBox tb) return;
-        var query = tb.Text?.Trim();
+        if (e.Key != Key.Enter) return;
+        var query = Omnibox.Text?.Trim();
         if (string.IsNullOrEmpty(query)) return;
-
         var url = query.Contains(".") && !query.StartsWith("http") ? $"https://{query}" : $"https://www.google.com/search?q={Uri.EscapeDataString(query)}";
         BrowserView.CoreWebView2?.Navigate(url);
-        tb.Text = url;
+        Omnibox.Text = url;
     }
 
     private void TabClose_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button btn && btn.DataContext is TabViewModel tab) tab.Close();
+        if (sender is System.Windows.Controls.Button btn && btn.DataContext is TabViewModel tab) tab.Close();
     }
 
     private void OpenSettings_Click(object sender, RoutedEventArgs e) { /* Phase 3 */ }
