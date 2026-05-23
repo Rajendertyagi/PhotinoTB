@@ -14,7 +14,6 @@ public partial class MainWindow
 {
     public MainViewModel ViewModel { get; }
 
-    // Win32 interop for manual window resizing
     [DllImport("user32.dll")]
     private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
     private const int WM_NCLBUTTONDOWN = 0xA1;
@@ -41,14 +40,12 @@ public partial class MainWindow
         }
     }
 
-    // ✅ Sync omnibox when URL changes
     private void CoreWebView2_SourceChanged(object? sender, Microsoft.Web.WebView2.Core.CoreWebView2SourceChangedEventArgs e)
     {
         if (BrowserView.CoreWebView2?.Source != null)
             Omnibox.Text = BrowserView.CoreWebView2.Source;
     }
 
-    // ✅ Update tab title on page load
     private void CoreWebView2_NavigationCompleted(object? sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
     {
         if (ViewModel.SelectedTab != null && BrowserView.CoreWebView2 != null)
@@ -59,7 +56,6 @@ public partial class MainWindow
         }
     }
 
-    // ✅ Switch WebView2 content when tab changes
     private async void TabStrip_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (BrowserView.CoreWebView2 == null || e.AddedItems.Count == 0) return;
@@ -70,7 +66,6 @@ public partial class MainWindow
         }
     }
 
-    // Window controls
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.Left) DragMove();
@@ -79,7 +74,6 @@ public partial class MainWindow
     private void BtnMax_Click(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 
-    // Tabs
     private void AddTab_Click(object sender, RoutedEventArgs e) => ViewModel.AddTab();
     private void TabClose_Click(object sender, RoutedEventArgs e)
     {
@@ -91,12 +85,10 @@ public partial class MainWindow
         if (sender is TabItem ti && ti.DataContext is TabViewModel tab3) tab3.Close();
     }
 
-    // Navigation
     private void GoBack_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.GoBack();
     private void GoForward_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.GoForward();
     private void Reload_Click(object sender, RoutedEventArgs e) => BrowserView.CoreWebView2?.Reload();
 
-    // Omnibox
     private void Omnibox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || sender is not TextBox tb) return;
@@ -110,7 +102,6 @@ public partial class MainWindow
         tb.Text = url;
     }
 
-    // Manual edge resizing (replaces OS grip when WindowStyle=None)
     private void ResizeBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.Left && sender is Border)
@@ -136,7 +127,6 @@ public partial class MainWindow
     private void DragResize(int direction) =>
         SendMessage(new System.Windows.Interop.WindowInteropHelper(this).Handle, WM_NCLBUTTONDOWN, direction, 0);
 
-    // Cleanup & stubs
     private void MainWindow_Closed(object? sender, EventArgs e) => BrowserView?.Dispose();
     private void OpenSettings_Click(object sender, RoutedEventArgs e) { /* Phase 3 */ }
 }
