@@ -5,6 +5,10 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+# Add this block to grant the GITHUB_TOKEN permission to create releases
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -14,7 +18,7 @@ jobs:
     - name: Setup .NET 10
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x' # Adjust if using preview feeds
+        dotnet-version: '10.0.x'
 
     - name: Restore & Publish
       run: |
@@ -24,9 +28,7 @@ jobs:
     - name: Download WebView2 Fixed Runtime
       shell: pwsh
       run: |
-        # Downloads the Evergreen Standalone (replace with Fixed Version URL if strictly required)
         Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "./publish/WebView2Bootstrapper.exe"
-        # Note: For true offline Fixed Version, download the MS Edge WebView2 Fixed Version ZIP from MS and extract to ./publish/WebView2Runtime/
 
     - name: Create Portable Folders
       shell: pwsh
