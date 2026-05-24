@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.Web.WebView2.Core;
 using TradingBrowser.ViewModels;
-using Windows.UI;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -22,7 +21,12 @@ public sealed partial class MainWindow : Window
         // Set DataContext for ElementName bindings in DataTemplates
         RootGrid.DataContext = this; 
         
-        this.Content.RequestedTheme = ElementTheme.Dark;
+        // Fix 1: Cast Content to FrameworkElement to access RequestedTheme
+        if (this.Content is FrameworkElement content)
+        {
+            content.RequestedTheme = ElementTheme.Dark;
+        }
+
         SetupTitleBar();
         
         // Initialize WebView2 on launch
@@ -35,9 +39,11 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
 
         var appWindow = this.AppWindow;
-        appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
-        appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-        appWindow.TitleBar.ButtonForegroundColor = Colors.White;
+        
+        // Fix 2: Use Microsoft.UI.Colors explicitly
+        appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
+        appWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
+        appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
     }
 
     private async Task InitializeWebViewAsync()
@@ -48,7 +54,8 @@ public sealed partial class MainWindow : Window
             string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
             Directory.CreateDirectory(userDataFolder);
 
-            var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+            // Fix 3: Pass all 3 arguments to CreateAsync (browserFolder, userDataFolder, options)
+            var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder, null);
             await MainWebView.EnsureCoreWebView2Async(env);
             
             MainWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
@@ -79,7 +86,8 @@ public sealed partial class MainWindow : Window
         // 1. Save state of the OLD tab
         if (e.RemovedItems.Count > 0 && e.RemovedItems[0] is TabViewModel oldTab)
         {
-            oldTab.Url = MainWebView.CoreWebView2.Source.AbsoluteUri;
+            // Fix 4: CoreWebView2.Source is a string, no .AbsoluteUri
+            oldTab.Url = MainWebView.CoreWebView2.Source; 
             oldTab.CanGoBack = MainWebView.CoreWebView2.CanGoBack;
             oldTab.CanGoForward = MainWebView.CoreWebView2.CanGoForward;
         }
@@ -89,14 +97,12 @@ public sealed partial class MainWindow : Window
         ViewModel.OmniboxText = newTab.Url;
         
         // Only navigate if the URL is different to prevent redundant loads
-        if (MainWebView.CoreWebView2.Source.AbsoluteUri != newTab.Url)
+        if (MainWebView.CoreWebView2.Source != newTab.Url)
         {
             MainWebView.CoreWebView2.Navigate(newTab.Url);
         }
     }
 
-    // FIX: Use fully qualified type for the sender to prevent namespace ambiguity 
-    // between the XAML Control and the Core Engine.
     private void MainWebView_NavigationStarting(Microsoft.UI.Xaml.Controls.WebView2 sender, CoreWebView2NavigationStartingEventArgs args)
     {
         if (ViewModel.SelectedTab != null)
