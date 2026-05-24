@@ -18,9 +18,8 @@
     
     <!-- Portability & Size Optimization -->
     <SelfContained>false</SelfContained> 
-    <PublishSingleFile>true</PublishSingleFile>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+    <!-- PublishSingleFile removed: WinAppSDK requires loose files for Framework-Dependent builds. 
+         The GitHub Action zips these loose files into a single portable download anyway. -->
     <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages> 
     
     <!-- App Details -->
