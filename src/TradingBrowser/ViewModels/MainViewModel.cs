@@ -1,8 +1,6 @@
-// ViewModels/MainViewModel.cs
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System;
 
 namespace TradingBrowser.ViewModels;
@@ -34,8 +32,14 @@ public partial class MainViewModel : ObservableObject
         int index = Tabs.IndexOf(tab);
         Tabs.Remove(tab);
 
-        if (Tabs.Count == 0) AddTab();
-        else SelectedTab = Tabs[Math.Min(index, Tabs.Count - 1)];
+        if (Tabs.Count == 0) 
+        {
+            AddTab();
+        }
+        else 
+        {
+            SelectedTab = Tabs[Math.Min(index, Tabs.Count - 1)];
+        }
     }
 
     [RelayCommand]
@@ -43,16 +47,23 @@ public partial class MainViewModel : ObservableObject
     {
         if (SelectedTab == null || string.IsNullOrWhiteSpace(OmniboxText)) return;
         
-        // Basic URL parsing fallback (Detailed logic goes in UrlParser helper later)
         string input = OmniboxText.Trim();
-        SelectedTab.Url = Uri.TryCreate(input, UriKind.Absolute, out _) || input.Contains('.') 
-            ? (input.StartsWith("http") ? input : $"https://{input}") 
-            : $"https://www.google.com/search?q={Uri.EscapeDataString(input)}";
-            
-        SelectedTab.Title = SelectedTab.Url; // Placeholder until WebView updates title
+        
+        // Basic URL parsing fallback (Will be moved to UrlParser helper in Phase 4)
+        bool isUrl = Uri.TryCreate(input, UriKind.Absolute, out var uriResult) 
+                     && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+                     
+        if (!isUrl && input.Contains('.') && !input.Contains(' '))
+        {
+            isUrl = true;
+            input = $"https://{input}";
+        }
+
+        SelectedTab.Url = isUrl ? input : $"https://www.google.com/search?q={Uri.EscapeDataString(input)}";
+        SelectedTab.Title = "Loading..."; 
     }
 
-    partial void OnSelectedTabChanged(TabViewModel? value)
+    partial void OnSelectedTabChanging(TabViewModel? value)
     {
         if (value != null) OmniboxText = value.Url;
     }
