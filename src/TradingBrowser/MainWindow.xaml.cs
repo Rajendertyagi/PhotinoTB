@@ -28,21 +28,13 @@ public sealed partial class MainWindow : Window
         }
 
         SetupTitleBar();
-        
-        // Hook into ViewModel navigation requests (Fixes Issue 2)
-        ViewModel.NavigationRequested += url => {
-            if (_isWebViewInitialized && MainWebView.CoreWebView2 != null) {
-                MainWebView.CoreWebView2.Navigate(url);
-            }
-        };
-
         _ = InitializeWebViewAsync();
     }
 
     private void SetupTitleBar()
     {
         ExtendsContentIntoTitleBar = true;
-        SetTitleBar(AppTitleBar); // Now covers the whole top row
+        SetTitleBar(AppTitleBar);
 
         var appWindow = this.AppWindow;
         appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
@@ -59,17 +51,29 @@ public sealed partial class MainWindow : Window
 
             Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userDataFolder);
 
+            // FIX 3: Performance Optimizations
+            // Force GPU rasterization and disable SmartScreen (reduces network latency per request)
+            Environment.SetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", 
+                "--enable-features=msWebView2CodeCache " +
+                "--force-gpu-rasterization " +
+                "--disable-features=msSmartScreenProtection,CalculateNativeWinOcclusion");
+
             await MainWebView.EnsureCoreWebView2Async();
             
-            MainWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
-            MainWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
+            var settings = MainWebView.CoreWebView2.Settings;
+            settings.IsStatusBarEnabled = false;
+            settings.AreDefaultContextMenusEnabled = true;
+            settings.IsGeneralAutofillEnabled = false;    // Speed up rendering
+            settings.IsPasswordAutosaveEnabled = false;   // Speed up rendering
+            settings.IsPinchZoomEnabled = false;
+            settings.IsSwipeNavigationEnabled = false;    // Prevent accidental back/forward lag
             
             MainWebView.CoreWebView2.DocumentTitleChanged += CoreWebView2_DocumentTitleChanged;
-            // Hook Navigation Completed to log network errors (Fixes Issue 5)
+            MainWebView.CoreWebView2.NavigationStarting += CoreWebView2_NavigationStarting;
             MainWebView.CoreWebView2.NavigationCompleted += CoreWebView2_NavigationCompleted;
             
             _isWebViewInitialized = true;
-            LoggingService.Log("WebView2 initialized successfully.");
+            LoggingService.Log("WebView2 initialized with High-Performance flags.");
 
             if (ViewModel.SelectedTab != null && ViewModel.SelectedTab.Url != "about:blank")
             {
@@ -79,29 +83,58 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             LoggingService.Error("WebView2 Init Error", ex);
-            
-            // Auto-run bootstrapper if WebView2 runtime is missing
             string bootstrapper = Path.Combine(AppContext.BaseDirectory, "WebView2Bootstrapper.exe");
-            if (File.Exists(bootstrapper))
-            {
-                LoggingService.Log("WebView2 runtime missing. Launching bootstrapper...");
-                Process.Start(new ProcessStartInfo(bootstrapper) { UseShellExecute = true });
-            }
+            if (File.Exists(bootstrapper)) Process.Start(new ProcessStartInfo(bootstrapper) { UseShellExecute = true });
         }
     }
 
-    private void CoreWebView2_NavigationCompleted(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
+    // --- Navigation Handlers (Fixes Issue 2) ---
+
+    private void Back_Click(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.SelectedTab != null)
+        if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoBack)
+            MainWebView.CoreWebView2.GoBack();
+    }
+
+    private void Forward_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoForward)
+            MainWebView.CoreWebView2.GoForward();
+    }
+
+    private void Reload_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isWebViewInitialized) MainWebView.CoreWebView2.Reload();
+    }
+
+    private void Home_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isWebViewInitialized)
         {
-            ViewModel.SelectedTab.IsLoading = false;
-            if (!args.IsSuccess)
-            {
-                // Logs errors like DNS failure, connection refused, etc.
-                LoggingService.Error($"Navigation failed for {sender.Source}: {args.WebErrorStatus}");
-            }
+            string home = "https://www.google.com";
+            MainWebView.CoreWebView2.Navigate(home);
+            if (ViewModel.SelectedTab != null) ViewModel.SelectedTab.Url = home;
+            ViewModel.OmniboxText = home;
         }
     }
+
+    // --- Tab Management Handlers (Fixes Issue 1) ---
+
+    private void CloseTab_Click(object sender, RoutedEventArgs e)
+    {
+        // Reliable extraction of TabViewModel from the button's DataContext
+        if (sender is FrameworkElement element && element.DataContext is TabViewModel tab)
+        {
+            ViewModel.CloseTabCommand.Execute(tab);
+        }
+    }
+
+    private void NewTab_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.AddTabCommand.Execute(null);
+    }
+
+    // --- WebView Events ---
 
     private void TabListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -110,8 +143,6 @@ public sealed partial class MainWindow : Window
         if (e.RemovedItems.Count > 0 && e.RemovedItems[0] is TabViewModel oldTab)
         {
             oldTab.Url = MainWebView.CoreWebView2.Source; 
-            oldTab.CanGoBack = MainWebView.CoreWebView2.CanGoBack;
-            oldTab.CanGoForward = MainWebView.CoreWebView2.CanGoForward;
         }
 
         var newTab = ViewModel.SelectedTab;
@@ -123,7 +154,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void MainWebView_NavigationStarting(Microsoft.UI.Xaml.Controls.WebView2 sender, CoreWebView2NavigationStartingEventArgs args)
+    private void CoreWebView2_NavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
     {
         if (ViewModel.SelectedTab != null)
         {
@@ -133,13 +164,22 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void CoreWebView2_DocumentTitleChanged(CoreWebView2 sender, object args)
+    private void CoreWebView2_NavigationCompleted(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
     {
         if (ViewModel.SelectedTab != null)
         {
-            ViewModel.SelectedTab.Title = sender.DocumentTitle;
             ViewModel.SelectedTab.IsLoading = false;
+            if (!args.IsSuccess) LoggingService.Error($"Nav Failed: {args.WebErrorStatus}");
         }
+
+        // Update Nav Button States
+        BackButton.IsEnabled = sender.CanGoBack;
+        ForwardButton.IsEnabled = sender.CanGoForward;
+    }
+
+    private void CoreWebView2_DocumentTitleChanged(CoreWebView2 sender, object args)
+    {
+        if (ViewModel.SelectedTab != null) ViewModel.SelectedTab.Title = sender.DocumentTitle;
     }
 
     private void Omnibox_KeyDown(object sender, KeyRoutedEventArgs e)
