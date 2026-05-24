@@ -21,7 +21,7 @@ public sealed partial class MainWindow : Window
         // Set DataContext for ElementName bindings in DataTemplates
         RootGrid.DataContext = this; 
         
-        // Fix 1: Cast Content to FrameworkElement to access RequestedTheme
+        // Cast Content to FrameworkElement to access RequestedTheme
         if (this.Content is FrameworkElement content)
         {
             content.RequestedTheme = ElementTheme.Dark;
@@ -40,7 +40,7 @@ public sealed partial class MainWindow : Window
 
         var appWindow = this.AppWindow;
         
-        // Fix 2: Use Microsoft.UI.Colors explicitly
+        // Use Microsoft.UI.Colors explicitly
         appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
         appWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
         appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
@@ -54,8 +54,8 @@ public sealed partial class MainWindow : Window
             string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
             Directory.CreateDirectory(userDataFolder);
 
-            // Fix 3: Pass all 3 arguments to CreateAsync (browserFolder, userDataFolder, options)
-            var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder, null);
+            // FIX: Use named arguments to bypass C# 14 optional parameter overload resolution issues
+            var env = await CoreWebView2Environment.CreateAsync(userDataFolder: userDataFolder);
             await MainWebView.EnsureCoreWebView2Async(env);
             
             MainWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
@@ -86,7 +86,7 @@ public sealed partial class MainWindow : Window
         // 1. Save state of the OLD tab
         if (e.RemovedItems.Count > 0 && e.RemovedItems[0] is TabViewModel oldTab)
         {
-            // Fix 4: CoreWebView2.Source is a string, no .AbsoluteUri
+            // CoreWebView2.Source is a string, no .AbsoluteUri
             oldTab.Url = MainWebView.CoreWebView2.Source; 
             oldTab.CanGoBack = MainWebView.CoreWebView2.CanGoBack;
             oldTab.CanGoForward = MainWebView.CoreWebView2.CanGoForward;
@@ -103,6 +103,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // Use fully qualified type for the sender to prevent namespace ambiguity
     private void MainWebView_NavigationStarting(Microsoft.UI.Xaml.Controls.WebView2 sender, CoreWebView2NavigationStartingEventArgs args)
     {
         if (ViewModel.SelectedTab != null)
