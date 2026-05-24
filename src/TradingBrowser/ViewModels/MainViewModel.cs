@@ -11,6 +11,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _omniboxText = string.Empty;
 
     public ObservableCollection<TabViewModel> Tabs { get; } = [];
+    
+    // Event to tell MainWindow to navigate the WebView2
+    public event Action<string>? NavigationRequested;
 
     public MainViewModel() => AddTab();
 
@@ -32,14 +35,8 @@ public partial class MainViewModel : ObservableObject
         int index = Tabs.IndexOf(tab);
         Tabs.Remove(tab);
 
-        if (Tabs.Count == 0) 
-        {
-            AddTab();
-        }
-        else 
-        {
-            SelectedTab = Tabs[Math.Min(index, Tabs.Count - 1)];
-        }
+        if (Tabs.Count == 0) AddTab();
+        else SelectedTab = Tabs[Math.Min(index, Tabs.Count - 1)];
     }
 
     [RelayCommand]
@@ -48,8 +45,6 @@ public partial class MainViewModel : ObservableObject
         if (SelectedTab == null || string.IsNullOrWhiteSpace(OmniboxText)) return;
         
         string input = OmniboxText.Trim();
-        
-        // Basic URL parsing fallback (Will be moved to UrlParser helper in Phase 4)
         bool isUrl = Uri.TryCreate(input, UriKind.Absolute, out var uriResult) 
                      && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
                      
@@ -59,8 +54,21 @@ public partial class MainViewModel : ObservableObject
             input = $"https://{input}";
         }
 
-        SelectedTab.Url = isUrl ? input : $"https://www.google.com/search?q={Uri.EscapeDataString(input)}";
-        SelectedTab.Title = "Loading..."; 
+        string finalUrl = isUrl ? input : $"https://www.google.com/search?q={Uri.EscapeDataString(input)}";
+        SelectedTab.Url = finalUrl;
+        
+        // Trigger the actual WebView2 navigation
+        NavigationRequested?.Invoke(finalUrl);
+    }
+
+    [RelayCommand]
+    private void GoHome()
+    {
+        if (SelectedTab != null)
+        {
+            SelectedTab.Url = "https://www.google.com";
+            NavigationRequested?.Invoke(SelectedTab.Url);
+        }
     }
 
     partial void OnSelectedTabChanging(TabViewModel? value)
