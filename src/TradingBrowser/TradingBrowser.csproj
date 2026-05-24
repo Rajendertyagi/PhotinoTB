@@ -14,12 +14,13 @@
     <!-- WinUI 3 & Unpackaged (No MSIX) -->
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
+    <!-- Must be true for WinUI 3 to generate resources.pri, but won't create an MSIX installer -->
     <EnableMsixTooling>true</EnableMsixTooling> 
     
     <!-- Portability & Size Optimization -->
+    <!-- Framework Dependent (Requires .NET 10 Desktop Runtime on host) -->
     <SelfContained>false</SelfContained> 
-    <!-- PublishSingleFile removed: WinAppSDK requires loose files for Framework-Dependent builds. 
-         The GitHub Action zips these loose files into a single portable download anyway. -->
+    <!-- Strips all non-English resource DLLs to minimize size -->
     <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages> 
     
     <!-- App Details -->
@@ -32,5 +33,12 @@
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.*" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.*" />
+  </ItemGroup>
+
+  <!-- Ensure JavaScript and asset files are copied to the output directory -->
+  <ItemGroup>
+    <None Update="Scripts\shortcuts.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
