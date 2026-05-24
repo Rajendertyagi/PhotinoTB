@@ -5,29 +5,27 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:TradingBrowser.ViewModels"
-    xmlns:wv2="using:Microsoft.Web.WebView2.Core"
     mc:Ignorable="d"
     Title="TradingBrowser">
 
     <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Title Bar & Tabs -->
-            <RowDefinition Height="Auto"/> <!-- Omnibox -->
-            <RowDefinition Height="*"/>    <!-- WebView2 Host -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Custom Title Bar & Tab Strip (FIX 1 & 3: Full width drag region, left-aligned tabs) -->
+        <!-- Custom Title Bar & Tab Strip -->
         <Grid Grid.Row="0" x:Name="AppTitleBar" Background="Transparent" Height="36">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>   <!-- Tabs & New Tab -->
-                <ColumnDefinition Width="138"/> <!-- Reserve space for native Min/Max/Close -->
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="138"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left-aligned container for Tabs + New Tab Button -->
             <Grid Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/> <!-- Tabs -->
-                    <ColumnDefinition Width="Auto"/> <!-- New Tab Button -->
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <ListView x:Name="TabListView" 
@@ -50,14 +48,9 @@
                             <Grid Background="Transparent" Padding="8,4" MinWidth="150" MaxWidth="240">
                                 <Grid.ContextFlyout>
                                     <MenuFlyout>
-                                        <MenuFlyoutItem Text="New Tab" Command="{Binding ViewModel.AddTabCommand, ElementName=RootGrid}"/>
+                                        <MenuFlyoutItem Text="New Tab" Click="NewTab_Click"/>
                                         <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem Text="Pin Tab"/>
-                                        <MenuFlyoutItem Text="Duplicate Tab"/>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem Text="Close Tab" Command="{Binding ViewModel.CloseTabCommand, ElementName=RootGrid}" CommandParameter="{x:Bind}"/>
-                                        <MenuFlyoutItem Text="Close Other Tabs"/>
-                                        <MenuFlyoutItem Text="Close Tabs to the Right"/>
+                                        <MenuFlyoutItem Text="Close Tab" Click="CloseTab_Click"/>
                                     </MenuFlyout>
                                 </Grid.ContextFlyout>
                                 
@@ -67,9 +60,10 @@
                                 </Grid.ColumnDefinitions>
                                 
                                 <TextBlock Text="{x:Bind Title, Mode=OneWay}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                
+                                <!-- FIX 1: Use Click handler for reliable closing inside DataTemplate -->
                                 <Button Grid.Column="1" 
-                                        Command="{Binding ViewModel.CloseTabCommand, ElementName=RootGrid}" 
-                                        CommandParameter="{x:Bind}" 
+                                        Click="CloseTab_Click"
                                         Style="{ThemeResource AlternateCloseButtonStyle}" 
                                         Width="24" Height="24"/>
                             </Grid>
@@ -77,24 +71,24 @@
                     </ListView.ItemTemplate>
                 </ListView>
 
-                <!-- New Tab Button (Sits exactly to the right of the tabs) -->
-                <Button Grid.Column="1" Content="+" Command="{x:Bind ViewModel.AddTabCommand}" 
+                <Button Grid.Column="1" Content="+" Click="NewTab_Click" 
                         VerticalAlignment="Center" Margin="4,0" ToolTipService.ToolTip="New Tab (Ctrl+T)"/>
             </Grid>
         </Grid>
 
-        <!-- Omnibox (FIX 4: Added Home Button) -->
+        <!-- Omnibox -->
         <Grid Grid.Row="1" Padding="8,4" ColumnSpacing="8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/> <!-- Nav Buttons -->
-                <ColumnDefinition Width="*"/>    <!-- URL Bar -->
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             
+            <!-- FIX 2: Added Click handlers and Names for state management -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
-                <Button Content="🏠" Command="{x:Bind ViewModel.GoHomeCommand}" ToolTipService.ToolTip="Home"/>
-                <Button Content="←" ToolTipService.ToolTip="Back (Alt+Left)"/>
-                <Button Content="→" ToolTipService.ToolTip="Forward (Alt+Right)"/>
-                <Button Content="⟳" ToolTipService.ToolTip="Reload (F5)"/>
+                <Button Content="🏠" Click="Home_Click" ToolTipService.ToolTip="Home"/>
+                <Button x:Name="BackButton" Content="←" Click="Back_Click" IsEnabled="False" ToolTipService.ToolTip="Back"/>
+                <Button x:Name="ForwardButton" Content="→" Click="Forward_Click" IsEnabled="False" ToolTipService.ToolTip="Forward"/>
+                <Button Content="⟳" Click="Reload_Click" ToolTipService.ToolTip="Reload"/>
             </StackPanel>
 
             <TextBox Grid.Column="1" 
@@ -106,9 +100,7 @@
 
         <!-- WebView2 Host -->
         <Grid Grid.Row="2" x:Name="WebViewHost" Background="#202124">
-            <WebView2 x:Name="MainWebView" 
-                      DefaultBackgroundColor="Transparent"
-                      NavigationStarting="MainWebView_NavigationStarting" />
+            <WebView2 x:Name="MainWebView" DefaultBackgroundColor="Transparent"/>
         </Grid>
     </Grid>
 </Window>
