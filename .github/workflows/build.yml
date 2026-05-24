@@ -1,57 +1,54 @@
-name: Build TB (WinUI 3 SDK 2.1)
-on: [push, workflow_dispatch]
-env:
-  DOTNET_NOLOGO: true
-  DOTNET_CLI_TELEMETRY_OPTOUT: true
+name: Build and Release Portable Browser
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: false
+    - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: '8.0.x'
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x' # Adjust if using preview feeds
 
-      - name: Clean Workspace
-        run: |
-          Remove-Item *.zip -Force -ErrorAction SilentlyContinue
-          Remove-Item bin,obj -Recurse -Force -ErrorAction SilentlyContinue
+    - name: Restore & Publish
+      run: |
+        dotnet restore src/TradingBrowser/TradingBrowser.csproj
+        dotnet publish src/TradingBrowser/TradingBrowser.csproj -c Release -r win-x64 -o ./publish
 
-      - run: dotnet restore
-      - run: dotnet build TB.csproj -c Release
+    - name: Download WebView2 Fixed Runtime
+      shell: pwsh
+      run: |
+        # Downloads the Evergreen Standalone (replace with Fixed Version URL if strictly required)
+        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "./publish/WebView2Bootstrapper.exe"
+        # Note: For true offline Fixed Version, download the MS Edge WebView2 Fixed Version ZIP from MS and extract to ./publish/WebView2Runtime/
 
-      - name: Publish
-        run: dotnet publish TB.csproj -c Release -r win-x64 --self-contained false
+    - name: Create Portable Folders
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path "./publish/UserData"
+        New-Item -ItemType Directory -Force -Path "./publish/logs"
 
-      - name: Create Portable ZIP (Flat Structure)
-        run: |
-          $workspace = $env:GITHUB_WORKSPACE
-          $publishDir = Join-Path $workspace "bin/Release/net8.0-windows10.0.26100.0/win-x64"
-          $zipPath = Join-Path $workspace "TB-Portable.zip"
-          
-          # Clean previous artifacts
-          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-          
-          # Create flat ZIP (contents of publish dir only, no parent folder)
-          Push-Location $publishDir
-          Compress-Archive -Path * -DestinationPath $zipPath -Force
-          Pop-Location
-          
-          # Verify output
-          Write-Host "=== ZIP Contents ==="
-          Expand-Archive -Path $zipPath -DestinationPath "$workspace/verify" -Force
-          Get-ChildItem -Path "$workspace/verify" | Select-Object Name
-          Remove-Item "$workspace/verify" -Recurse -Force
+    - name: Package Zip
+      shell: pwsh
+      run: Compress-Archive -Path "./publish/*" -DestinationPath "./TradingBrowser-Portable-win-x64.zip"
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: TB-Portable
-          path: TB-Portable.zip
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 6
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: TradingBrowser-Portable
+        path: ./TradingBrowser-Portable-win-x64.zip
+
+    - name: Create GitHub Release
+      if: github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ github.run_number }}
+        files: ./TradingBrowser-Portable-win-x64.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
