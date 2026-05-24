@@ -8,7 +8,7 @@
     mc:Ignorable="d"
     Title="TradingBrowser">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Title Bar & Tabs -->
             <RowDefinition Height="Auto"/> <!-- Omnibox -->
@@ -24,9 +24,11 @@
             </Grid.ColumnDefinitions>
 
             <!-- Tab Strip -->
-            <ListView Grid.Column="0" 
+            <ListView x:Name="TabListView" 
+                      Grid.Column="0" 
                       ItemsSource="{x:Bind ViewModel.Tabs, Mode=OneWay}" 
                       SelectedItem="{x:Bind ViewModel.SelectedTab, Mode=TwoWay}"
+                      SelectionChanged="TabListView_SelectionChanged"
                       CanReorderItems="True" AllowDrop="True"
                       ScrollViewer.HorizontalScrollMode="Enabled" 
                       ScrollViewer.HorizontalScrollBarVisibility="Hidden"
@@ -38,13 +40,31 @@
                 </ListView.ItemsPanel>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="vm:TabViewModel">
-                        <Grid Background="Transparent" Padding="8,4" MinWidth="150" MaxWidth="240" ContextFlyout="{StaticResource TabContextFlyout}">
+                        <Grid Background="Transparent" Padding="8,4" MinWidth="150" MaxWidth="240">
+                            <Grid.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="New Tab" Command="{Binding ViewModel.AddTabCommand, ElementName=RootGrid}"/>
+                                    <MenuFlyoutSeparator/>
+                                    <MenuFlyoutItem Text="Pin Tab"/>
+                                    <MenuFlyoutItem Text="Duplicate Tab"/>
+                                    <MenuFlyoutSeparator/>
+                                    <MenuFlyoutItem Text="Close Tab" Command="{Binding ViewModel.CloseTabCommand, ElementName=RootGrid}" CommandParameter="{x:Bind}"/>
+                                    <MenuFlyoutItem Text="Close Other Tabs"/>
+                                    <MenuFlyoutItem Text="Close Tabs to the Right"/>
+                                </MenuFlyout>
+                            </Grid.ContextFlyout>
+                            
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
+                            
                             <TextBlock Text="{x:Bind Title, Mode=OneWay}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                            <Button Grid.Column="1" Command="{Binding ElementName=RootGrid, Path=DataContext.ViewModel.CloseTabCommand}" CommandParameter="{x:Bind}" Style="{ThemeResource AlternateCloseButtonStyle}" Width="24" Height="24"/>
+                            <Button Grid.Column="1" 
+                                    Command="{Binding ViewModel.CloseTabCommand, ElementName=RootGrid}" 
+                                    CommandParameter="{x:Bind}" 
+                                    Style="{ThemeResource AlternateCloseButtonStyle}" 
+                                    Width="24" Height="24"/>
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
@@ -59,7 +79,7 @@
         <!-- Omnibox -->
         <Grid Grid.Row="1" Padding="8,4" ColumnSpacing="8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/> <!-- Back/Forward -->
+                <ColumnDefinition Width="Auto"/> <!-- Nav Buttons -->
                 <ColumnDefinition Width="*"/>    <!-- URL Bar -->
             </Grid.ColumnDefinitions>
             
@@ -76,25 +96,11 @@
                      VerticalAlignment="Center"/>
         </Grid>
 
-        <!-- WebView2 Host (Responsive, fills remaining space) -->
+        <!-- WebView2 Host -->
         <Grid Grid.Row="2" x:Name="WebViewHost" Background="#202124">
-            <TextBlock Text="WebView2 will be injected here in Phase 3" 
-                       HorizontalAlignment="Center" VerticalAlignment="Center" 
-                       Foreground="Gray"/>
+            <WebView2 x:Name="MainWebView" 
+                      DefaultBackgroundColor="Transparent"
+                      NavigationStarting="MainWebView_NavigationStarting" />
         </Grid>
     </Grid>
-
-    <!-- Tab Context Menu -->
-    <Window.Resources>
-        <MenuFlyout x:Key="TabContextFlyout">
-            <MenuFlyoutItem Text="New Tab" Command="{Binding ViewModel.AddTabCommand}"/>
-            <MenuFlyoutSeparator/>
-            <MenuFlyoutItem Text="Pin Tab"/>
-            <MenuFlyoutItem Text="Duplicate Tab"/>
-            <MenuFlyoutSeparator/>
-            <MenuFlyoutItem Text="Close Tab" Command="{Binding ViewModel.CloseTabCommand}"/>
-            <MenuFlyoutItem Text="Close Other Tabs"/>
-            <MenuFlyoutItem Text="Close Tabs to the Right"/>
-        </MenuFlyout>
-    </Window.Resources>
 </Window>
