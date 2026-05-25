@@ -10,6 +10,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.UI.Windowing;
 using System.Collections.Generic;
+using Microsoft.UI.Xaml.Data; // For CollectionViewSource if needed later
 
 namespace TradingBrowser;
 
@@ -20,7 +21,8 @@ public sealed partial class MainWindow : Window
     
     private readonly SessionService _sessionService;
     private readonly ShortcutService _shortcutService;
-    
+    private readonly HistoryBookmarkService _hbService; // Service for Bookmarks/History
+
     private readonly string _shortcutsJs;
     private readonly string _tradingViewJs;
 
@@ -31,13 +33,25 @@ public sealed partial class MainWindow : Window
         
         if (this.Content is FrameworkElement content) content.RequestedTheme = ElementTheme.Dark;
 
+        // Initialize Services
         _sessionService = new SessionService(App.Db!);
+        _hbService = new HistoryBookmarkService(App.Db!);
         
+        // Initialize Shortcut Service
         _shortcutService = new ShortcutService(
             ViewModel, 
             () => _isWebViewInitialized ? MainWebView.CoreWebView2 : null
         );
 
+        // Hook up the Bookmark shortcut event
+        _shortcutService.BookmarkRequested += () => {
+            if (ViewModel.SelectedTab != null)
+            {
+                ToggleBookmark(ViewModel.SelectedTab.Url, ViewModel.SelectedTab.Title);
+            }
+        };
+
+        // Load JavaScript Injectors
         string shortcutsPath = Path.Combine(AppContext.BaseDirectory, "Scripts", "shortcuts.js");
         _shortcutsJs = File.Exists(shortcutsPath) ? File.ReadAllText(shortcutsPath) : "";
 
@@ -61,6 +75,7 @@ public sealed partial class MainWindow : Window
 
     private void SetupEventHooks()
     {
+        // Route raw UI events to the ShortcutService
         RootGrid.PointerPressed += (s, e) => _shortcutService.HandlePointerPressed(e);
         RootGrid.KeyDown += (s, e) => _shortcutService.HandleUiKeyDown(e);
         
@@ -121,12 +136,111 @@ public sealed partial class MainWindow : Window
             {
                 ViewModel.InitializeSession(new List<TabViewModel>(), null);
             }
+            
+            // Refresh Sidebar with data from DB on startup
+            RefreshSidebar();
         }
         catch (Exception ex)
         {
             LoggingService.Error("WebView2 Init Error", ex);
         }
     }
+
+    /// <summary>
+    /// Refreshes the Sidebar ListViews with the latest data from the SQLite database.
+    /// </summary>
+    private void RefreshSidebar()
+    {
+        // Get Bookmarks and History from Service
+        var b = _hbService.GetBookmarks();
+        var h = _hbService.GetHistory();
+        
+        // Bind to the ListViews defined in XAML
+        // We use generic Tuples or custom structs depending on how you defined them in Service
+        // Assuming Service returns List<(string Url, string Title)> or similar
+        
+        // For Bookmarks:
+        var bookmarkList = new List<ViewModels.BookmarkItem>();
+        foreach(var item in b) bookmarkList.Add(new ViewModels.BookmarkItem { Url = item.Url, Title = item.Title });
+        BookmarkListView.ItemsSource = bookmarkList;
+
+        // For History:
+        var historyList = new List<ViewModels.HistoryItem>();
+        foreach(var item in h) historyList.Add(new ViewModels.HistoryItem { Url = item.Url, Title = item.Title, VisitTime = item.Time });
+        HistoryListView.ItemsSource = historyList;
+
+        // Check if current URL is bookmarked to set Star icon
+        if (ViewModel.SelectedTab != null)
+        {
+            bool isBookmarked = _hbService.IsBookmarked(ViewModel.SelectedTab.Url);
+            BookmarkButton.Content = isBookmarked ? "★" : "☆";
+        }
+    }
+
+    /// <summary>
+    /// Toggles the bookmark status of the current URL.
+    /// Adds to DB if missing, removes if present. Updates the Star icon.
+    /// </summary>
+    private void ToggleBookmark(string url, string title)
+    {
+        if (string.IsNullOrEmpty(url)) return;
+        
+        bool isBookmarked = _hbService.IsBookmarked(url);
+        
+        if (isBookmarked)
+        {
+            _hbService.RemoveBookmark(url);
+            BookmarkButton.Content = "☆";
+            LoggingService.Log($"Removed bookmark: {title}");
+        }
+        else
+        {
+            _hbService.AddBookmark(url, title);
+            BookmarkButton.Content = "★";
+            LoggingService.Log($"Added bookmark: {title}");
+        }
+        
+        RefreshSidebar();
+    }
+
+    // --- Event Handlers for ListViews ---
+    private void BookmarkListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (BookmarkListView.SelectedItem is ViewModels.BookmarkItem item)
+        {
+            // Navigate to the URL
+            ViewModel.NavigateToUrlCommand.Execute(item.Url);
+            // Close sidebar on selection
+            MainSplitView.IsPaneOpen = false; 
+            BookmarkListView.SelectedItem = null;
+        }
+    }
+
+    private void HistoryListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (HistoryListView.SelectedItem is ViewModels.HistoryItem item)
+        {
+            ViewModel.NavigateToUrlCommand.Execute(item.Url);
+            MainSplitView.IsPaneOpen = false;
+            HistoryListView.SelectedItem = null;
+        }
+    }
+
+    // --- UI Click Handlers ---
+    private void Bookmark_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.SelectedTab != null)
+        {
+            ToggleBookmark(ViewModel.SelectedTab.Url, ViewModel.SelectedTab.Title);
+        }
+    }
+    
+    private void Back_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoBack) MainWebView.CoreWebView2.GoBack(); }
+    private void Forward_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoForward) MainWebView.CoreWebView2.GoForward(); }
+    private void Reload_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized) MainWebView.CoreWebView2.Reload(); }
+    private void Home_Click(object sender, RoutedEventArgs e) { ViewModel.GoHomeCommand.Execute(null); }
+    private void CloseTab_Click(object sender, RoutedEventArgs e) { if (sender is FrameworkElement el && el.DataContext is TabViewModel tab) ViewModel.CloseTabCommand.Execute(tab); }
+    private void NewTab_Click(object sender, RoutedEventArgs e) { ViewModel.AddTabCommand.Execute(null); }
 
     private void CoreWebView2_WebMessageReceived(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
@@ -164,65 +278,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // --- UI Click Handlers ---
-    private void Back_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoBack) MainWebView.CoreWebView2.GoBack(); }
-    private void Forward_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoForward) MainWebView.CoreWebView2.GoForward(); }
-    private void Reload_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized) MainWebView.CoreWebView2.Reload(); }
-    private void Home_Click(object sender, RoutedEventArgs e) { ViewModel.GoHomeCommand.Execute(null); }
-    private void CloseTab_Click(object sender, RoutedEventArgs e) { if (sender is FrameworkElement el && el.DataContext is TabViewModel tab) ViewModel.CloseTabCommand.Execute(tab); }
-    private void NewTab_Click(object sender, RoutedEventArgs e) { ViewModel.AddTabCommand.Execute(null); }
-
-    private async void Settings_Click(object sender, RoutedEventArgs e)
-    {
-        var vm = new SettingsViewModel();
-        
-        var panel = new StackPanel { Spacing = 16, Width = 400 };
-        
-        panel.Children.Add(new TextBlock { Text = "Default Search Engine", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
-        var comboBox = new ComboBox 
-        { 
-            ItemsSource = vm.SearchEngines, 
-            SelectedIndex = vm.SelectedSearchEngineIndex,
-            HorizontalAlignment = HorizontalAlignment.Stretch
-        };
-        comboBox.SelectionChanged += (s, args) => vm.SelectedSearchEngineIndex = comboBox.SelectedIndex;
-        panel.Children.Add(comboBox);
-
-        var toggle = new ToggleSwitch 
-        { 
-            Header = "Restore last session on startup", 
-            IsOn = vm.RestoreSessionOnStartup,
-            Margin = new Thickness(0, 8, 0, 0)
-        };
-        toggle.Toggled += (s, args) => vm.RestoreSessionOnStartup = toggle.IsOn;
-        panel.Children.Add(toggle);
-
-        var clearBtn = new Button 
-        { 
-            Content = "Clear Browsing Data (Cache, Cookies, History)", 
-            Margin = new Thickness(0, 16, 0, 0),
-            HorizontalAlignment = HorizontalAlignment.Stretch
-        };
-        clearBtn.Click += (s, args) => 
-        {
-            vm.ClearBrowsingDataCommand.Execute(null);
-            clearBtn.Content = "Cleared! (Restart app to apply)";
-            clearBtn.IsEnabled = false;
-        };
-        panel.Children.Add(clearBtn);
-
-        var dialog = new ContentDialog
-        {
-            Title = "Settings",
-            Content = panel,
-            CloseButtonText = "Done",
-            XamlRoot = this.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark
-        };
-
-        await dialog.ShowAsync();
-    }
-
     // --- WebView State Sync ---
     private void TabListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -232,27 +287,57 @@ public sealed partial class MainWindow : Window
         var newTab = ViewModel.SelectedTab;
         ViewModel.OmniboxText = newTab.Url;
         if (MainWebView.CoreWebView2.Source != newTab.Url) MainWebView.CoreWebView2.Navigate(newTab.Url);
+        
+        // Update Star icon when switching tabs
+        bool isBookmarked = _hbService.IsBookmarked(newTab.Url);
+        BookmarkButton.Content = isBookmarked ? "★" : "☆";
     }
 
     private void CoreWebView2_NavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
     {
-        if (ViewModel.SelectedTab != null) { ViewModel.OmniboxText = args.Uri; ViewModel.SelectedTab.Url = args.Uri; ViewModel.SelectedTab.IsLoading = true; }
+        if (ViewModel.SelectedTab != null) 
+        { 
+            ViewModel.OmniboxText = args.Uri; 
+            ViewModel.SelectedTab.Url = args.Uri; 
+            ViewModel.SelectedTab.IsLoading = true; 
+        }
     }
 
     private void CoreWebView2_NavigationCompleted(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
     {
-        if (ViewModel.SelectedTab != null) { ViewModel.SelectedTab.IsLoading = false; if (!args.IsSuccess) LoggingService.Error($"Nav Failed: {args.WebErrorStatus}"); }
+        if (ViewModel.SelectedTab != null) 
+        { 
+            ViewModel.SelectedTab.IsLoading = false; 
+            if (!args.IsSuccess) LoggingService.Error($"Nav Failed: {args.WebErrorStatus}");
+        }
+        
+        // Update Nav Button States
         BackButton.IsEnabled = sender.CanGoBack;
         ForwardButton.IsEnabled = sender.CanGoForward;
+
+        // Add to History if navigation was successful
+        if (args.IsSuccess && ViewModel.SelectedTab != null)
+        {
+            _hbService.AddHistory(ViewModel.SelectedTab.Url, ViewModel.SelectedTab.Title);
+            // Refresh sidebar to show new history entry
+            RefreshSidebar();
+        }
     }
 
     private void CoreWebView2_DocumentTitleChanged(CoreWebView2 sender, object args)
     {
-        if (ViewModel.SelectedTab != null) ViewModel.SelectedTab.Title = sender.DocumentTitle;
+        if (ViewModel.SelectedTab != null) 
+        {
+            ViewModel.SelectedTab.Title = sender.DocumentTitle;
+        }
     }
 
     private void Omnibox_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (e.Key == Windows.System.VirtualKey.Enter) { ViewModel.NavigateOmniboxCommand.Execute(null); e.Handled = true; }
+        if (e.Key == Windows.System.VirtualKey.Enter) 
+        { 
+            ViewModel.NavigateOmniboxCommand.Execute(null); 
+            e.Handled = true; 
+        }
     }
 }
