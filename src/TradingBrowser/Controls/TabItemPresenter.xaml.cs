@@ -2,8 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Windows.UI; // Provides the Color struct
-using static Windows.UI.Colors; // FIX: Import static Colors class members (White, Transparent, etc.)
+using Windows.UI;
 using System;
 
 namespace TradingBrowser.Controls;
@@ -42,14 +41,14 @@ public sealed partial class TabItemPresenter : UserControl
 
     /// <summary>
     /// Internal brushes bound to XAML for state-driven theming.
-    /// Uses Windows.UI.Colors which is the correct namespace for WinUI 3.
+    /// Uses explicit ARGB values to avoid CI namespace resolution issues with Windows.UI.Colors.
     /// </summary>
     private SolidColorBrush BackgroundBrush => IsSelected 
         ? new SolidColorBrush(Color.FromArgb(255, 32, 33, 36)) 
-        : new SolidColorBrush(Transparent); // FIX: Now resolves via 'using static Windows.UI.Colors'
+        : new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)); // Transparent
         
     private SolidColorBrush ForegroundBrush => IsSelected 
-        ? new SolidColorBrush(White) // FIX: Now resolves via 'using static Windows.UI.Colors'
+        ? new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)) // White
         : new SolidColorBrush(Color.FromArgb(255, 154, 160, 166));
 
     /// <summary>
