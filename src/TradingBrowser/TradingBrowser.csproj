@@ -11,6 +11,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     
+    <!-- Suppress Source Generator warnings for private fields -->
+    <NoWarn>$(NoWarn);CS0169;CS0414;IDE0051;IDE0044</NoWarn>
+    
     <!-- WinUI 3 & Unpackaged (No MSIX) -->
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
@@ -33,9 +36,12 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.8" />
   </ItemGroup>
 
-  <!-- Ensure JavaScript and asset files are copied to the output directory -->
+  <!-- Ensure JavaScript files are copied to the output directory -->
   <ItemGroup>
     <None Update="Scripts\shortcuts.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Scripts\tradingview-tweaks.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
