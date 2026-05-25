@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
     private bool _isWebViewInitialized;
     private readonly SessionService _sessionService;
     private readonly string _shortcutsJs;
+    private readonly string _tradingViewJs;
 
     public MainWindow()
     {
@@ -29,8 +30,12 @@ public sealed partial class MainWindow : Window
 
         _sessionService = new SessionService(App.Db!);
         
-        string jsPath = Path.Combine(AppContext.BaseDirectory, "Scripts", "shortcuts.js");
-        _shortcutsJs = File.Exists(jsPath) ? File.ReadAllText(jsPath) : "";
+        // Load JS Injectors
+        string shortcutsPath = Path.Combine(AppContext.BaseDirectory, "Scripts", "shortcuts.js");
+        _shortcutsJs = File.Exists(shortcutsPath) ? File.ReadAllText(shortcutsPath) : "";
+
+        string tvJsPath = Path.Combine(AppContext.BaseDirectory, "Scripts", "tradingview-tweaks.js");
+        _tradingViewJs = File.Exists(tvJsPath) ? File.ReadAllText(tvJsPath) : "";
 
         SetupTitleBar();
         SetupEventHooks();
@@ -70,9 +75,7 @@ public sealed partial class MainWindow : Window
             string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
             Directory.CreateDirectory(userDataFolder);
 
-            // FIX: Use the official CoreWebView2EnvironmentOptions API.
-            // This safely applies performance flags without crashing the engine, 
-            // and explicitly passing the object bypasses C# 14 optional parameter bugs.
+            // Safe performance flags using the official API
             var options = new CoreWebView2EnvironmentOptions
             {
                 AdditionalBrowserArguments = "--enable-features=msWebView2CodeCache --force-gpu-rasterization",
@@ -95,9 +98,16 @@ public sealed partial class MainWindow : Window
             MainWebView.CoreWebView2.NavigationCompleted += CoreWebView2_NavigationCompleted;
             MainWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
             
+            // Inject Shortcuts JS
             if (!string.IsNullOrEmpty(_shortcutsJs))
             {
                 await MainWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(_shortcutsJs);
+            }
+
+            // Inject TradingView Tweaks JS (Hides scrollbars, captures JS errors)
+            if (!string.IsNullOrEmpty(_tradingViewJs))
+            {
+                await MainWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(_tradingViewJs);
             }
 
             _isWebViewInitialized = true;
@@ -109,18 +119,22 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             LoggingService.Error("WebView2 Init Error", ex);
-            // Removed blind bootstrapper execution. 
-            // If it fails now, it will log the exact reason to ./logs/ instead of throwing a fake install error.
         }
     }
 
     private void CoreWebView2_WebMessageReceived(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
-        string msg = args.TryGetWebMessageAsString();
-        if (msg?.StartsWith("SHORTCUT:") == true)
+        string? msg = args.TryGetWebMessageAsString();
+        if (msg == null) return;
+
+        if (msg.StartsWith("SHORTCUT:"))
         {
-            string key = msg.Replace("SHORTCUT:", "");
-            ProcessShortcut(key);
+            ProcessShortcut(msg.Replace("SHORTCUT:", ""));
+        }
+        else if (msg.StartsWith("LOG:"))
+        {
+            // Routes JS errors and unhandled promises from tradingview-tweaks.js to our file logger
+            LoggingService.Log(msg, "WEBVIEW_JS");
         }
     }
 
