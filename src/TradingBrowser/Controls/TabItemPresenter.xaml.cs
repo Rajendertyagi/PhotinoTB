@@ -2,16 +2,18 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.UI; // FIX: WinUI 3 uses Windows.UI.Colors, not Microsoft.UI.Colors
 using System;
 
 namespace TradingBrowser.Controls;
 
 /// <summary>
 /// Custom tab item control with trapezoidal shape, middle-click close, and visual state management.
+/// Handles pointer events and exposes clean actions for the MainWindow to consume.
 /// </summary>
 public sealed partial class TabItemPresenter : UserControl
 {
-    // Dependency properties for data binding
+    // Dependency properties for data binding from XAML
     public static readonly DependencyProperty TitleProperty = 
         DependencyProperty.Register("Title", typeof(string), typeof(TabItemPresenter), new PropertyMetadata(string.Empty));
     public static readonly DependencyProperty IsSelectedProperty = 
@@ -37,9 +39,17 @@ public sealed partial class TabItemPresenter : UserControl
         set => SetValue(IsPinnedProperty, value);
     }
 
-    // Internal brushes bound to XAML for state-driven theming
-    private SolidColorBrush BackgroundBrush => IsSelected ? new SolidColorBrush(Microsoft.UI.Color.FromArgb(255, 32, 33, 36)) : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-    private SolidColorBrush ForegroundBrush => IsSelected ? new SolidColorBrush(Microsoft.UI.Colors.White) : new SolidColorBrush(Microsoft.UI.Color.FromArgb(255, 154, 160, 166));
+    /// <summary>
+    /// Internal brushes bound to XAML for state-driven theming.
+    /// Uses Windows.UI.Colors which is the correct namespace for WinUI 3.
+    /// </summary>
+    private SolidColorBrush BackgroundBrush => IsSelected 
+        ? new SolidColorBrush(Color.FromArgb(255, 32, 33, 36)) 
+        : new SolidColorBrush(Colors.Transparent);
+        
+    private SolidColorBrush ForegroundBrush => IsSelected 
+        ? new SolidColorBrush(Colors.White) 
+        : new SolidColorBrush(Color.FromArgb(255, 154, 160, 166));
 
     /// <summary>
     /// Event fired when the middle mouse button is pressed on this tab.
@@ -54,34 +64,47 @@ public sealed partial class TabItemPresenter : UserControl
     public TabItemPresenter()
     {
         this.InitializeComponent();
-        // Default close button visibility based on selection
+        // Default close button visibility based on selection state
         CloseButton.Visibility = IsSelected ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Callback triggered by the dependency property system when IsSelected changes.
+    /// Updates the VisualStateManager and close button visibility.
+    /// </summary>
     private static void OnIsSelectedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is TabItemPresenter control)
         {
-            // Update visual state and close button visibility when selection changes
-            VisualStateManager.GoToState(control, (bool)e.NewValue ? "Selected" : "Normal", true);
-            control.CloseButton.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
+            bool isSelected = (bool)e.NewValue;
+            VisualStateManager.GoToState(control, isSelected ? "Selected" : "Normal", true);
+            control.CloseButton.Visibility = isSelected ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
+    /// <summary>
+    /// Handles pointer input to detect middle-click (mouse wheel button) for quick tab closing.
+    /// Uses PointerRoutedEventArgs which supports the Handled property.
+    /// </summary>
     private void UserControl_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        // Detect middle mouse button click for quick tab closing
         var props = e.GetCurrentPoint(this).Properties;
         if (props.IsMiddleButtonPressed)
         {
+            // Mark as handled to prevent the click from bubbling up to the ListView selection logic
             e.Handled = true;
             MiddleClicked?.Invoke();
         }
     }
 
+    /// <summary>
+    /// Handles the X button click event.
+    /// RoutedEventArgs does NOT have a Handled property in WinUI 3, so we simply invoke the action.
+    /// </summary>
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        e.Handled = true;
+        // FIX: Removed e.Handled = true; RoutedEventArgs doesn't support it.
+        // The event is direct, not routed, so no bubbling occurs anyway.
         CloseClicked?.Invoke();
     }
 }
