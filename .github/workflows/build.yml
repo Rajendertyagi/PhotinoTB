@@ -20,10 +20,10 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v5
 
-    - name: Setup .NET 10
+    - name: Setup .NET 9
       uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: '10.0.x'
+        dotnet-version: '9.0.x'
 
     - name: Restore & Publish
       run: |
@@ -57,13 +57,14 @@ jobs:
         retention-days: 7
         compression-level: 0 
 
+    # FIX: Replaced Node.js action with native GitHub CLI to eliminate deprecation warnings
     - name: Create GitHub Release
       if: github.ref == 'refs/heads/main'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
-        files: ./${{ steps.package.outputs.ZIP_NAME }}
-        generate_release_notes: true
+      shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create "v${{ github.run_number }}" \
+          "./${{ steps.package.outputs.ZIP_NAME }}" \
+          --title "Release v${{ github.run_number }}" \
+          --generate-notes
