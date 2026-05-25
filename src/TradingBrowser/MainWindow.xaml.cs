@@ -10,32 +10,44 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.UI.Windowing;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TradingBrowser;
 
+/// <summary>
+/// Main application window.
+/// Follows clean architecture by delegating business logic to services and ViewModels.
+/// This class focuses solely on UI initialization and event wiring.
+/// </summary>
 public sealed partial class MainWindow : Window
 {
-    public MainViewModel ViewModel { get; } = new();
+    // Core ViewModel for UI state management
+    public MainWindowViewModel ViewModel { get; } = new();
+    
+    // Flag indicating if WebView2 has been initialized
     private bool _isWebViewInitialized;
     
-    // Core Services
+    // Core services for different functionalities
     private readonly SessionService _sessionService;
     private readonly ShortcutService _shortcutService;
     private readonly HistoryBookmarkService _hbService;
-    private readonly DownloadService _downloadService; // NEW: Manages file downloads & history
-
-    // JavaScript Injectors
+    private readonly DownloadService _downloadService;
+    private WebViewNavigationService? _navService; // Initialized after WebView
+    
+    // JavaScript injectors loaded from files
     private readonly string _shortcutsJs;
     private readonly string _tradingViewJs;
 
+    /// <summary>
+    /// Constructor: Initializes components, services, and event handlers.
+    /// </summary>
     public MainWindow()
     {
         this.InitializeComponent();
         RootGrid.DataContext = this; 
         
         // Enforce Dark Theme on the root content
-        if (this.Content is FrameworkElement content) content.RequestedTheme = ElementTheme.Dark;
+        if (this.Content is FrameworkElement content) 
+            content.RequestedTheme = ElementTheme.Dark;
 
         // Initialize all backend services
         _sessionService = new SessionService(App.Db!);
@@ -68,6 +80,9 @@ public sealed partial class MainWindow : Window
         _ = InitializeWebViewAsync();
     }
 
+    /// <summary>
+    /// Configures the custom title bar with transparent buttons.
+    /// </summary>
     private void SetupTitleBar()
     {
         ExtendsContentIntoTitleBar = true;
@@ -78,16 +93,35 @@ public sealed partial class MainWindow : Window
         appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
     }
 
+    /// <summary>
+    /// Wires up all event handlers for UI interactions.
+    /// </summary>
     private void SetupEventHooks()
     {
         // Route raw UI events to the ShortcutService
         RootGrid.PointerPressed += (s, e) => _shortcutService.HandlePointerPressed(e);
         RootGrid.KeyDown += (s, e) => _shortcutService.HandleUiKeyDown(e);
         
-        ViewModel.NavigationRequested += url => { if (_isWebViewInitialized) MainWebView.CoreWebView2.Navigate(url); };
-        ViewModel.FocusOmniboxRequested += () => { Omnibox.Focus(FocusState.Programmatic); Omnibox.SelectAll(); };
+        // Delegate navigation requests to WebView
+        ViewModel.NavigationRequested += url => { 
+            if (_isWebViewInitialized) 
+                MainWebView.CoreWebView2.Navigate(url); 
+        };
+        
+        // Handle omnibox focus requests
+        ViewModel.FocusOmniboxRequested += () => { 
+            Omnibox.Focus(FocusState.Programmatic); 
+            Omnibox.SelectAll(); 
+        };
+        
+        // Handle fullscreen toggle requests
         ViewModel.ToggleFullscreenRequested += ToggleFullscreen;
-        ViewModel.OpenDevToolsRequested += () => { if (_isWebViewInitialized) MainWebView.CoreWebView2.OpenDevToolsWindow(); };
+        
+        // Handle dev tools requests
+        ViewModel.OpenDevToolsRequested += () => { 
+            if (_isWebViewInitialized) 
+                MainWebView.CoreWebView2.OpenDevToolsWindow(); 
+        };
 
         // Save session to SQLite when the window is closing
         this.AppWindow.Closing += (s, e) => {
@@ -96,6 +130,9 @@ public sealed partial class MainWindow : Window
         };
     }
 
+    /// <summary>
+    /// Initializes WebView2 with environment variables and injects scripts.
+    /// </summary>
     private async Task InitializeWebViewAsync()
     {
         try
@@ -110,6 +147,7 @@ public sealed partial class MainWindow : Window
 
             await MainWebView.EnsureCoreWebView2Async();
             
+            // Configure WebView2 settings for performance and UX
             var settings = MainWebView.CoreWebView2.Settings;
             settings.IsStatusBarEnabled = false;
             settings.AreDefaultContextMenusEnabled = true;
@@ -124,8 +162,11 @@ public sealed partial class MainWindow : Window
             MainWebView.CoreWebView2.NavigationCompleted += CoreWebView2_NavigationCompleted;
             MainWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
             
-            // NEW: Hook Download Manager to intercept and log file downloads
+            // Initialize Download Manager to intercept file downloads
             _downloadService.Initialize(MainWebView.CoreWebView2);
+            
+            // Initialize Navigation Service for special URI handling
+            _navService = new WebViewNavigationService(_downloadService, MainWebView.CoreWebView2);
             
             // Inject JavaScript files for shortcuts and TradingView tweaks
             if (!string.IsNullOrEmpty(_shortcutsJs))
@@ -166,11 +207,13 @@ public sealed partial class MainWindow : Window
         var h = _hbService.GetHistory();
         
         var bookmarkList = new List<ViewModels.BookmarkItem>();
-        foreach(var item in b) bookmarkList.Add(new ViewModels.BookmarkItem { Url = item.Url, Title = item.Title });
+        foreach(var item in b) 
+            bookmarkList.Add(new ViewModels.BookmarkItem { Url = item.Url, Title = item.Title });
         BookmarkListView.ItemsSource = bookmarkList;
 
         var historyList = new List<ViewModels.HistoryItem>();
-        foreach(var item in h) historyList.Add(new ViewModels.HistoryItem { Url = item.Url, Title = item.Title, VisitTime = item.Time });
+        foreach(var item in h) 
+            historyList.Add(new ViewModels.HistoryItem { Url = item.Url, Title = item.Title, VisitTime = item.Time });
         HistoryListView.ItemsSource = historyList;
 
         // Update Star icon state for current tab
@@ -236,7 +279,10 @@ public sealed partial class MainWindow : Window
         }
     }
     
-    // NEW: Opens the Downloads History page
+    /// <summary>
+    /// Opens the Downloads History page.
+    /// Delegates to navigation service.
+    /// </summary>
     private void Downloads_Click(object sender, RoutedEventArgs e)
     {
         if (_isWebViewInitialized)
@@ -245,14 +291,37 @@ public sealed partial class MainWindow : Window
         }
     }
     
-    private void Back_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoBack) MainWebView.CoreWebView2.GoBack(); }
-    private void Forward_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoForward) MainWebView.CoreWebView2.GoForward(); }
-    private void Reload_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized) MainWebView.CoreWebView2.Reload(); }
-    private void Home_Click(object sender, RoutedEventArgs e) { ViewModel.GoHomeCommand.Execute(null); }
-    private void CloseTab_Click(object sender, RoutedEventArgs e) { if (sender is FrameworkElement el && el.DataContext is TabViewModel tab) ViewModel.CloseTabCommand.Execute(tab); }
-    private void NewTab_Click(object sender, RoutedEventArgs e) { ViewModel.AddTabCommand.Execute(null); }
+    private void Back_Click(object sender, RoutedEventArgs e) { 
+        if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoBack) 
+            MainWebView.CoreWebView2.GoBack(); 
+    }
+    
+    private void Forward_Click(object sender, RoutedEventArgs e) { 
+        if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoForward) 
+            MainWebView.CoreWebView2.GoForward(); 
+    }
+    
+    private void Reload_Click(object sender, RoutedEventArgs e) { 
+        if (_isWebViewInitialized) 
+            MainWebView.CoreWebView2.Reload(); 
+    }
+    
+    private void Home_Click(object sender, RoutedEventArgs e) { 
+        ViewModel.GoHomeCommand.Execute(null); 
+    }
+    
+    private void CloseTab_Click(object sender, RoutedEventArgs e) { 
+        if (sender is FrameworkElement el && el.DataContext is TabViewModel tab) 
+            ViewModel.CloseTabCommand.Execute(tab); 
+    }
+    
+    private void NewTab_Click(object sender, RoutedEventArgs e) { 
+        ViewModel.AddTabCommand.Execute(null); 
+    }
 
-    // --- WebView Message Router ---
+    /// <summary>
+    /// Routes messages from WebView2 JavaScript to appropriate handlers.
+    /// </summary>
     private void CoreWebView2_WebMessageReceived(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
         string? msg = args.TryGetWebMessageAsString();
@@ -268,28 +337,18 @@ public sealed partial class MainWindow : Window
         {
             LoggingService.Log(msg, "WEBVIEW_JS");
         }
-        // NEW: Handle Download Page Interactions
-        else if (msg.StartsWith("REMOVE_DOWNLOAD:"))
+        // Route Download Page interactions to Navigation Service
+        else if (msg.StartsWith("REMOVE_DOWNLOAD:") || 
+                 msg == "CLEAR_ALL_DOWNLOADS" || 
+                 msg.StartsWith("COPY_LINK:"))
         {
-            int id = int.Parse(msg.Replace("REMOVE_DOWNLOAD:", ""));
-            using var conn = App.Db!.GetConnection(); conn.Open();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "DELETE FROM Downloads WHERE Id = @id;";
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.ExecuteNonQuery();
-            LoadDownloadsPage(); // Refresh UI after deletion
-        }
-        else if (msg == "CLEAR_ALL_DOWNLOADS")
-        {
-            using var conn = App.Db!.GetConnection(); conn.Open();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "DELETE FROM Downloads;";
-            cmd.ExecuteNonQuery();
-            LoadDownloadsPage();
+            _navService?.HandleDownloadPageMessage(msg);
         }
     }
 
-    // --- Fullscreen Toggle ---
+    /// <summary>
+    /// Toggles between fullscreen and windowed mode.
+    /// </summary>
     private void ToggleFullscreen()
     {
         var presenter = this.AppWindow.Presenter as OverlappedPresenter;
@@ -315,23 +374,28 @@ public sealed partial class MainWindow : Window
     private void TabListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!_isWebViewInitialized || ViewModel.SelectedTab == null) return;
-        if (e.RemovedItems.Count > 0 && e.RemovedItems[0] is TabViewModel oldTab) oldTab.Url = MainWebView.CoreWebView2.Source;
+        if (e.RemovedItems.Count > 0 && e.RemovedItems[0] is TabViewModel oldTab) 
+            oldTab.Url = MainWebView.CoreWebView2.Source;
         
         var newTab = ViewModel.SelectedTab;
         ViewModel.OmniboxText = newTab.Url;
-        if (MainWebView.CoreWebView2.Source != newTab.Url) MainWebView.CoreWebView2.Navigate(newTab.Url);
+        if (MainWebView.CoreWebView2.Source != newTab.Url) 
+            MainWebView.CoreWebView2.Navigate(newTab.Url);
         
         bool isBookmarked = _hbService.IsBookmarked(newTab.Url);
         BookmarkButton.Content = isBookmarked ? "★" : "☆";
     }
 
+    /// <summary>
+    /// Handles navigation starting events.
+    /// Intercepts special URIs like 'about:downloads'.
+    /// </summary>
     private void CoreWebView2_NavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
     {
-        // NEW: Intercept internal 'about:downloads' URI and render custom HTML instead
-        if (args.Uri == "about:downloads")
+        // Delegate special URI handling to Navigation Service
+        if (_navService != null && _navService.HandleSpecialUri(args.Uri))
         {
             args.Cancel = true;
-            LoadDownloadsPage();
             return;
         }
 
@@ -343,16 +407,21 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Handles navigation completion events.
+    /// Updates UI state and saves to history.
+    /// </summary>
     private void CoreWebView2_NavigationCompleted(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
     {
         if (ViewModel.SelectedTab != null) 
         { 
             ViewModel.SelectedTab.IsLoading = false; 
-            if (!args.IsSuccess) LoggingService.Error($"Nav Failed: {args.WebErrorStatus}");
+            if (!args.IsSuccess) 
+                LoggingService.Error($"Nav Failed: {args.WebErrorStatus}");
         }
         
-        BackButton.IsEnabled = sender.CanGoBack;
-        ForwardButton.IsEnabled = sender.CanGoForward;
+        // Update navigation button states via ViewModel
+        ViewModel.UpdateNavigationState(sender.CanGoBack, sender.CanGoForward);
 
         // Add to History if navigation was successful
         if (args.IsSuccess && ViewModel.SelectedTab != null)
@@ -377,81 +446,5 @@ public sealed partial class MainWindow : Window
             ViewModel.NavigateOmniboxCommand.Execute(null); 
             e.Handled = true; 
         }
-    }
-
-    // --- NEW: Download History Page Generator ---
-    /// <summary>
-    /// Generates and injects a dark-themed HTML page showing download history from SQLite.
-    /// </summary>
-    private void LoadDownloadsPage()
-    {
-        var records = _downloadService.GetHistory();
-        var grouped = records.GroupBy(r => r.StartTime.ToString("MMM dd, yyyy"));
-        
-        string itemsHtml = "";
-        foreach (var group in grouped)
-        {
-            itemsHtml += $"<div class='date-header'>{group.Key}</div>";
-            foreach (var item in group)
-            {
-                // Determine status color based on state
-                string statusColor = item.State == "Completed" ? "#4CAF50" : (item.State == "Failed" ? "#F44336" : "#FFC107");
-                itemsHtml += $@"
-                <div class='download-item'>
-                    <div class='icon'>📄</div>
-                    <div class='info'>
-                        <div class='name'>{System.Net.WebUtility.HtmlEncode(item.FileName)}</div>
-                        <div class='status' style='color:{statusColor}'>{item.State}</div>
-                    </div>
-                    <div class='actions'>
-                        <button onclick=""copyLink('{System.Net.WebUtility.HtmlEncode(item.SourceUrl)}')"">🔗</button>
-                        <button onclick=""removeDownload({item.Id})"">️</button>
-                    </div>
-                </div>";
-            }
-        }
-
-        if (string.IsNullOrEmpty(itemsHtml))
-        {
-            itemsHtml = "<div class='empty-state'>No downloads found.</div>";
-        }
-
-        // Full HTML/CSS template matching the requested screenshot style
-        string html = $@"
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{ background-color: #202124; color: #e8eaed; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }}
-                .header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #3c4043; padding-bottom: 10px; }}
-                .header h2 {{ margin: 0; font-weight: 500; }}
-                .clear-btn {{ background: #303134; border: 1px solid #5f6368; color: #8ab4f8; padding: 5px 15px; border-radius: 4px; cursor: pointer; }}
-                .clear-btn:hover {{ background: #3c4043; }}
-                .date-header {{ color: #9aa0a6; font-size: 12px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; padding-left: 10px; }}
-                .download-item {{ display: flex; align-items: center; background: #303134; padding: 10px; margin-bottom: 8px; border-radius: 4px; }}
-                .icon {{ font-size: 24px; margin-right: 15px; }}
-                .info {{ flex-grow: 1; }}
-                .name {{ font-size: 14px; margin-bottom: 4px; }}
-                .status {{ font-size: 12px; }}
-                .actions button {{ background: none; border: none; color: #9aa0a6; font-size: 16px; cursor: pointer; padding: 0 5px; }}
-                .actions button:hover {{ color: #e8eaed; }}
-                .empty-state {{ text-align: center; color: #9aa0a6; margin-top: 50px; }}
-            </style>
-        </head>
-        <body>
-            <div class='header'>
-                <h2>Downloads</h2>
-                <button class='clear-btn' onclick=""clearAll()"">Clear all</button>
-            </div>
-            {itemsHtml}
-            <script>
-                function copyLink(url) {{ window.chrome.webview.postMessage('COPY_LINK:' + url); }}
-                function removeDownload(id) {{ window.chrome.webview.postMessage('REMOVE_DOWNLOAD:' + id); }}
-                function clearAll() {{ window.chrome.webview.postMessage('CLEAR_ALL_DOWNLOADS'); }}
-            </script>
-        </body>
-        </html>";
-
-        MainWebView.NavigateToString(html);
     }
 }
