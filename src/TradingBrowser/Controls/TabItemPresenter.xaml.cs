@@ -20,15 +20,15 @@ public sealed partial class TabItemPresenter : UserControl
     public bool IsSelected { get => (bool)GetValue(IsSelectedProperty); set => SetValue(IsSelectedProperty, value); }
     public bool IsPinned { get => (bool)GetValue(IsPinnedProperty); set => SetValue(IsPinnedProperty, value); }
 
-    private SolidColorBrush BackgroundBrush => IsSelected 
+    // FIX: Made public so x:Bind can safely resolve them during compilation
+    public SolidColorBrush BackgroundBrush => IsSelected 
         ? new SolidColorBrush(Color.FromArgb(255, 32, 33, 36)) 
         : new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
         
-    private SolidColorBrush ForegroundBrush => IsSelected 
+    public SolidColorBrush ForegroundBrush => IsSelected 
         ? new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)) 
         : new SolidColorBrush(Color.FromArgb(255, 154, 160, 166));
 
-    // FIX: Use RoutedEventHandler instead of Action to match XAML event handler signatures
     public event RoutedEventHandler? MiddleClicked;
     public event RoutedEventHandler? CloseClicked;
 
