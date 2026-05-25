@@ -29,7 +29,6 @@ public sealed partial class MainWindow : Window
 
         _sessionService = new SessionService(App.Db!);
         
-        // Ensure Scripts folder exists in output, fallback gracefully if missing
         string jsPath = Path.Combine(AppContext.BaseDirectory, "Scripts", "shortcuts.js");
         _shortcutsJs = File.Exists(jsPath) ? File.ReadAllText(jsPath) : "";
 
@@ -54,8 +53,6 @@ public sealed partial class MainWindow : Window
         RootGrid.KeyDown += RootGrid_KeyDown;
         
         ViewModel.NavigationRequested += url => { if (_isWebViewInitialized) MainWebView.CoreWebView2.Navigate(url); };
-        
-        // This now works because Omnibox has an x:Name in XAML
         ViewModel.FocusOmniboxRequested += () => { Omnibox.Focus(FocusState.Programmatic); Omnibox.SelectAll(); };
         ViewModel.ToggleFullscreenRequested += ToggleFullscreen;
         ViewModel.OpenDevToolsRequested += () => { if (_isWebViewInitialized) MainWebView.CoreWebView2.OpenDevToolsWindow(); };
@@ -72,11 +69,18 @@ public sealed partial class MainWindow : Window
         {
             string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
             Directory.CreateDirectory(userDataFolder);
-            Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userDataFolder);
-            Environment.SetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", 
-                "--enable-features=msWebView2CodeCache --force-gpu-rasterization --disable-features=msSmartScreenProtection");
 
-            await MainWebView.EnsureCoreWebView2Async();
+            // FIX: Use the official CoreWebView2EnvironmentOptions API.
+            // This safely applies performance flags without crashing the engine, 
+            // and explicitly passing the object bypasses C# 14 optional parameter bugs.
+            var options = new CoreWebView2EnvironmentOptions
+            {
+                AdditionalBrowserArguments = "--enable-features=msWebView2CodeCache --force-gpu-rasterization",
+                Language = "en-US"
+            };
+
+            var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder, options);
+            await MainWebView.EnsureCoreWebView2Async(env);
             
             var settings = MainWebView.CoreWebView2.Settings;
             settings.IsStatusBarEnabled = false;
@@ -89,17 +93,15 @@ public sealed partial class MainWindow : Window
             MainWebView.CoreWebView2.DocumentTitleChanged += CoreWebView2_DocumentTitleChanged;
             MainWebView.CoreWebView2.NavigationStarting += CoreWebView2_NavigationStarting;
             MainWebView.CoreWebView2.NavigationCompleted += CoreWebView2_NavigationCompleted;
-            
             MainWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
             
-            // FIX 2: Added 'await' to clear the CS4014 compiler warning
             if (!string.IsNullOrEmpty(_shortcutsJs))
             {
                 await MainWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(_shortcutsJs);
             }
 
             _isWebViewInitialized = true;
-            LoggingService.Log("WebView2 initialized.");
+            LoggingService.Log("WebView2 initialized successfully using system runtime.");
 
             var restoredTabs = _sessionService.LoadSession(out string? activeId);
             ViewModel.InitializeSession(restoredTabs, activeId);
@@ -107,8 +109,8 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             LoggingService.Error("WebView2 Init Error", ex);
-            string bootstrapper = Path.Combine(AppContext.BaseDirectory, "WebView2Bootstrapper.exe");
-            if (File.Exists(bootstrapper)) Process.Start(new ProcessStartInfo(bootstrapper) { UseShellExecute = true });
+            // Removed blind bootstrapper execution. 
+            // If it fails now, it will log the exact reason to ./logs/ instead of throwing a fake install error.
         }
     }
 
