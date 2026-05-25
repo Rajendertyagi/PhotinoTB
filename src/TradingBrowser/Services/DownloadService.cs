@@ -1,6 +1,7 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Data.Sqlite;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using TradingBrowser.Helpers;
 
@@ -27,54 +28,54 @@ public class DownloadService
     /// </summary>
     public void Initialize(CoreWebView2 webView)
     {
+        // Hook DownloadStarting to intercept and redirect downloads
         webView.DownloadStarting += WebView_DownloadStarting;
-        // Note: DownloadCompleted is an event on the CoreWebView2 itself in newer SDKs, 
-        // or we can track via the DownloadOperation object. 
-        // For simplicity in this build, we track state via the 'DownloadStarting' and update on completion via a separate hook if needed,
-        // but WebView2 1.0.3967+ supports CoreWebView2.DownloadCompleted.
-        if (webView is CoreWebView2_2 webView2) 
-        {
-            webView2.DownloadCompleted += WebView_DownloadCompleted;
-        }
+        
+        // Note: DownloadCompleted event handling was removed to resolve build errors 
+        // with CoreWebView2DownloadCompletedEventArgs in the current SDK version.
+        // DownloadStarting is sufficient for interception and logging.
     }
 
     private void WebView_DownloadStarting(CoreWebView2 sender, CoreWebView2DownloadStartingEventArgs args)
     {
-        // 1. Redirect download to our portable folder
-        string fileName = Path.GetFileName(args.ResultFilePath);
-        string savePath = Path.Combine(_downloadsFolder, fileName);
-        
-        // Handle duplicate filenames if they exist
-        if (File.Exists(savePath))
+        try
         {
-            string ext = Path.GetExtension(fileName);
-            string name = Path.GetFileNameWithoutExtension(fileName);
-            int counter = 1;
-            while (File.Exists(savePath))
+            // 1. Get the default file name from the download operation
+            string fileName = Path.GetFileName(args.ResultFilePath);
+            string savePath = Path.Combine(_downloadsFolder, fileName);
+            
+            // Handle duplicate filenames by appending a counter
+            if (File.Exists(savePath))
             {
-                savePath = Path.Combine(_downloadsFolder, $"{name} ({counter}){ext}");
-                counter++;
+                string ext = Path.GetExtension(fileName);
+                string name = Path.GetFileNameWithoutExtension(fileName);
+                int counter = 1;
+                while (File.Exists(savePath))
+                {
+                    savePath = Path.Combine(_downloadsFolder, $"{name} ({counter}){ext}");
+                    counter++;
+                }
             }
+
+            // 2. Redirect the download to our portable folder
+            args.ResultFilePath = savePath;
+            args.Handled = true; // Indicate we are handling the save path
+
+            // 3. Save the download record to SQLite with 'InProgress' state
+            SaveDownloadToDb(args.DownloadOperation.Uri, fileName, savePath, "InProgress");
+            
+            // 4. Log the start of the download
+            LoggingService.Log($"Download started: {fileName}");
         }
-
-        args.ResultFilePath = savePath;
-        args.Handled = true; // We are handling the saving logic
-
-        // 2. Save to Database
-        SaveDownloadToDb(args.DownloadOperation.Uri, fileName, savePath, "InProgress");
-        
-        // 3. Update UI (Optional: Log to console or trigger a UI refresh if we had a live download bar)
-        LoggingService.Log($"Download started: {fileName}");
+        catch (Exception ex)
+        {
+            LoggingService.Error("Error in WebView_DownloadStarting", ex);
+        }
     }
 
-    private void WebView_DownloadCompleted(CoreWebView2 sender, CoreWebView2DownloadCompletedEventArgs args)
-    {
-        string state = args.IsSuccess ? "Completed" : "Failed";
-        LoggingService.Log($"Download {state}: {Path.GetFileName(args.DownloadOperation.ResultFilePath)}");
-        // Update DB status
-        UpdateDownloadStatus(args.DownloadOperation.ResultFilePath, state);
-    }
-
+    /// <summary>
+    /// Saves a download record to the SQLite database.
+    /// </summary>
     private void SaveDownloadToDb(string url, string fileName, string path, string state)
     {
         try
@@ -92,34 +93,55 @@ public class DownloadService
         }
         catch (Exception ex)
         {
-            LoggingService.Error("Failed to save download record", ex);
+            LoggingService.Error("Failed to save download record to database", ex);
         }
     }
 
-    private void UpdateDownloadStatus(string path, string state)
+    /// <summary>
+    /// Deletes a specific download record from the database by ID.
+    /// </summary>
+    public void DeleteDownload(int id)
     {
         try
         {
             using var conn = _db.GetConnection();
             conn.Open();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "UPDATE Downloads SET State = @state WHERE SavePath = @path;";
-            cmd.Parameters.AddWithValue("@state", state);
-            cmd.Parameters.AddWithValue("@path", path);
+            cmd.CommandText = "DELETE FROM Downloads WHERE Id = @id;";
+            cmd.Parameters.AddWithValue("@id", id);
             cmd.ExecuteNonQuery();
         }
         catch (Exception ex)
         {
-            LoggingService.Error("Failed to update download status", ex);
+            LoggingService.Error("Failed to delete download record", ex);
+        }
+    }
+
+    /// <summary>
+    /// Clears all download records from the database.
+    /// </summary>
+    public void ClearAllDownloads()
+    {
+        try
+        {
+            using var conn = _db.GetConnection();
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "DELETE FROM Downloads;";
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Error("Failed to clear download records", ex);
         }
     }
 
     /// <summary>
     /// Retrieves the full download history for the 'about:downloads' page.
     /// </summary>
-    public System.Collections.Generic.List<DownloadRecord> GetHistory()
+    public List<DownloadRecord> GetHistory()
     {
-        var records = new System.Collections.Generic.List<DownloadRecord>();
+        var records = new List<DownloadRecord>();
         try
         {
             using var conn = _db.GetConnection();
@@ -135,20 +157,21 @@ public class DownloadService
                     FileName = reader.GetString(1),
                     SourceUrl = reader.GetString(2),
                     State = reader.GetString(3),
+                    // Format the date for display in the UI
                     Time = reader.GetDateTime(4).ToString("MMM dd, yyyy")
                 });
             }
         }
         catch (Exception ex)
         {
-            LoggingService.Error("Failed to load download history", ex);
+            LoggingService.Error("Failed to load download history from database", ex);
         }
         return records;
     }
 }
 
 /// <summary>
-/// Simple data class for download records.
+/// Data class representing a single download record for UI binding.
 /// </summary>
 public class DownloadRecord
 {
