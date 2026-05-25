@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:TradingBrowser.ViewModels"
+    xmlns:controls="using:TradingBrowser.Controls"
     mc:Ignorable="d"
     Title="TradingBrowser">
 
@@ -23,7 +24,6 @@
                         </ListView.ItemTemplate>
                     </ListView>
                 </PivotItem>
-                
                 <PivotItem Header="History">
                     <ListView x:Name="HistoryListView" SelectionMode="Single" SelectionChanged="HistoryListView_SelectionChanged">
                         <ListView.ItemTemplate>
@@ -39,25 +39,28 @@
             </Pivot>
         </SplitView.Pane>
         
-        <Grid x:Name="RootGrid" Background="#202124">
+        <!-- Fluid Responsive Main Grid -->
+        <Grid x:Name="RootGrid" Background="#202124" UseLayoutRounding="True">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/> <!-- Title Bar & Tabs -->
+                <RowDefinition Height="Auto"/> <!-- Omnibox -->
+                <RowDefinition Height="*"/>    <!-- WebView2 (Fills remaining space) -->
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0" x:Name="AppTitleBar" Background="Transparent" Height="36">
+            <!-- Custom Title Bar & Tab Strip -->
+            <Grid Grid.Row="0" x:Name="AppTitleBar" Background="Transparent" Height="36" UseLayoutRounding="True">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="138"/>
+                    <ColumnDefinition Width="*"/>   <!-- Tabs expand to fill available space -->
+                    <ColumnDefinition Width="138"/> <!-- Fixed reservation for native window controls -->
                 </Grid.ColumnDefinitions>
 
                 <Grid Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/> <!-- Tabs -->
+                        <ColumnDefinition Width="Auto"/> <!-- New Tab Button -->
                     </Grid.ColumnDefinitions>
 
+                    <!-- Tab Strip with Horizontal Scrolling -->
                     <ListView x:Name="TabListView" 
                               Grid.Column="0"
                               ItemsSource="{x:Bind ViewModel.Tabs, Mode=OneWay}" 
@@ -67,7 +70,7 @@
                               ScrollViewer.HorizontalScrollMode="Enabled" 
                               ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                               ScrollViewer.VerticalScrollMode="Disabled"
-                              Background="Transparent">
+                              Background="Transparent" Padding="0">
                         <ListView.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <ItemsStackPanel Orientation="Horizontal"/>
@@ -75,27 +78,27 @@
                         </ListView.ItemsPanel>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:TabViewModel">
-                                <Grid Background="Transparent" Padding="8,4" MinWidth="150" MaxWidth="240">
-                                    <Grid.ContextFlyout>
+                                <controls:TabItemPresenter 
+                                    Title="{x:Bind Title, Mode=OneWay}"
+                                    IsSelected="{x:Bind IsSelected, Mode=OneWay}"
+                                    IsPinned="{x:Bind IsPinned, Mode=OneWay}"
+                                    MiddleClicked="Tab_MiddleClicked"
+                                    CloseClicked="Tab_CloseClicked">
+                                    <controls:TabItemPresenter.ContextFlyout>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem Text="New Tab" Click="NewTab_Click"/>
+                                            <MenuFlyoutItem Text="New Tab" Command="{Binding ViewModel.AddTabCommand, ElementName=RootGrid}"/>
                                             <MenuFlyoutSeparator/>
-                                            <MenuFlyoutItem Text="Close Tab" Click="CloseTab_Click"/>
+                                            <MenuFlyoutItem Text="Duplicate Tab" Command="{Binding ViewModel.DuplicateTabCommand, ElementName=RootGrid}" CommandParameter="{x:Bind}"/>
+                                            <MenuFlyoutItem Text="Pin Tab" Command="{Binding ViewModel.PinTabCommand, ElementName=RootGrid}" CommandParameter="{x:Bind}"/>
+                                            <MenuFlyoutSeparator/>
+                                            <MenuFlyoutItem Text="Close Tab" Command="{Binding ViewModel.CloseTabCommand, ElementName=RootGrid}" CommandParameter="{x:Bind}"/>
+                                            <MenuFlyoutItem Text="Close Other Tabs" Command="{Binding ViewModel.CloseOtherTabsCommand, ElementName=RootGrid}" CommandParameter="{x:Bind}"/>
+                                            <MenuFlyoutItem Text="Close Tabs to the Right" Command="{Binding ViewModel.CloseTabsToRightCommand, ElementName=RootGrid}" CommandParameter="{x:Bind}"/>
+                                            <MenuFlyoutSeparator/>
+                                            <MenuFlyoutItem Text="Reopen Closed Tab" Command="{Binding ViewModel.ReopenClosedTabCommand, ElementName=RootGrid}"/>
                                         </MenuFlyout>
-                                    </Grid.ContextFlyout>
-                                    
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <TextBlock Text="{x:Bind Title, Mode=OneWay}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="White"/>
-                                    
-                                    <Button Grid.Column="1" 
-                                            Click="CloseTab_Click"
-                                            Style="{ThemeResource AlternateCloseButtonStyle}" 
-                                            Width="24" Height="24"/>
-                                </Grid>
+                                    </controls:TabItemPresenter.ContextFlyout>
+                                </controls:TabItemPresenter>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
@@ -105,14 +108,15 @@
                 </Grid>
             </Grid>
 
+            <!-- Omnibox & Navigation Toolbar -->
             <Grid Grid.Row="1" Padding="8,4" ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>  <!-- Buttons -->
+                    <ColumnDefinition Width="*"/>     <!-- Omnibox expands fluidly -->
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
-                    <Button Content="" Click="Home_Click" ToolTipService.ToolTip="Home"/>
+                    <Button Content="🏠" Click="Home_Click" ToolTipService.ToolTip="Home"/>
                     <Button x:Name="BackButton" Content="←" Click="Back_Click" IsEnabled="False" ToolTipService.ToolTip="Back"/>
                     <Button x:Name="ForwardButton" Content="→" Click="Forward_Click" IsEnabled="False" ToolTipService.ToolTip="Forward"/>
                     <Button Content="⟳" Click="Reload_Click" ToolTipService.ToolTip="Reload"/>
@@ -127,9 +131,10 @@
                          PlaceholderText="Search Google or type a URL"
                          KeyDown="Omnibox_KeyDown"
                          Background="#303134" Foreground="White" BorderThickness="0"
-                         VerticalAlignment="Center"/>
+                         VerticalAlignment="Center" UseLayoutRounding="True"/>
             </Grid>
 
+            <!-- WebView2 Host -->
             <Grid Grid.Row="2" x:Name="WebViewHost" Background="#202124">
                 <WebView2 x:Name="MainWebView" DefaultBackgroundColor="Transparent"/>
             </Grid>
