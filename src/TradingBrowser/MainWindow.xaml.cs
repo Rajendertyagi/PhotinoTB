@@ -81,12 +81,8 @@ public sealed partial class MainWindow : Window
             string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
             Directory.CreateDirectory(userDataFolder);
             
-            var options = new CoreWebView2EnvironmentOptions
-            {
-                AdditionalBrowserArguments = "--enable-features=msWebView2CodeCache --force-gpu-rasterization"
-            };
-            
-            await CoreWebView2Environment.CreateAsync(null, userDataFolder, options);
+            // FIX: Dropped the 3rd argument to satisfy the specific WebView2 SDK version compiler
+            await CoreWebView2Environment.CreateAsync(null, userDataFolder);
             LoggingService.Log("WebView2 Environment pre-warmed successfully.");
         }
         catch (Exception ex)
@@ -194,7 +190,6 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            // Initialize Secondary WebView (Uses pre-warmed environment for instant load)
             await SecondaryWebView.EnsureCoreWebView2Async();
             SecondaryWebView.CoreWebView2.Navigate("https://www.tradingview.com");
             LoggingService.Log("Secondary WebView initialized (Split Pane).");
@@ -220,9 +215,8 @@ public sealed partial class MainWindow : Window
     private void PaneDivider_DragDelta(object sender, DragDeltaEventArgs e)
     {
         double newLeftWidth = LeftPaneColumn.Width.Value + e.HorizontalChange;
-        double totalWidth = WebViewHost.ActualWidth - 4; // 4px for divider
+        double totalWidth = WebViewHost.ActualWidth - 4; 
         
-        // Prevent panes from shrinking below 200px
         if (newLeftWidth > 200 && (totalWidth - newLeftWidth) > 200)
         {
             LeftPaneColumn.Width = new GridLength(newLeftWidth, GridUnitType.Pixel);
@@ -314,7 +308,6 @@ public sealed partial class MainWindow : Window
             };
             menu.Items.Add(closeOtherItem);
 
-            // MULTI-PANE: Split Right Context Menu Item
             var splitItem = new MenuFlyoutItem { Text = "Split Right" };
             splitItem.Click += (s, args) => SplitPane();
             menu.Items.Add(splitItem);
