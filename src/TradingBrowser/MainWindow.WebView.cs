@@ -12,23 +12,6 @@ namespace TradingBrowser;
 
 public sealed partial class MainWindow
 {
-    private async Task PreWarmWebViewEnvironmentAsync()
-    {
-        try
-        {
-            string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
-            Directory.CreateDirectory(userDataFolder);
-            
-            // FIX: Dropped the 3rd argument to satisfy the specific WebView2 SDK version
-            await CoreWebView2Environment.CreateAsync(null, userDataFolder);
-            LoggingService.Log("WebView2 Environment pre-warmed successfully.");
-        }
-        catch (Exception ex)
-        {
-            LoggingService.Error("WebView2 Pre-warm Error", ex);
-        }
-    }
-
     private async Task InitializeWebViewAsync()
     {
         try
