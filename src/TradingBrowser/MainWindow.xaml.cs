@@ -97,7 +97,9 @@ public sealed partial class MainWindow : Window
         string url = ViewModel.OmniboxText ?? "";
         bool isHttps = url.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
         bool isNewTab = string.IsNullOrWhiteSpace(url) || url == "https://www.google.com";
-        OmniboxIcon.Text = (isHttps && !isNewTab) ? "🔒" : "🔍";
+        
+        // MASTER PLAN: Fluent UI Glyphs (Lock = \uE72E, Search = \uE721)
+        OmniboxIcon.Glyph = (isHttps && !isNewTab) ? "\uE72E" : "\uE721";
     }
 
     private void SetupTitleBar()
@@ -259,6 +261,7 @@ public sealed partial class MainWindow : Window
             };
             menu.Items.Add(closeOtherItem);
 
+            // MASTER PLAN: Desktop Acrylic for Transient UI
             menu.SystemBackdrop = new DesktopAcrylicBackdrop();
 
             if (e.TryGetPosition(tabPresenter, out Windows.Foundation.Point point))
