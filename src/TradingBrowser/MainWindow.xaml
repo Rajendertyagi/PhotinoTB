@@ -9,10 +9,7 @@
     mc:Ignorable="d"
     Title="TradingBrowser">
 
-    <!-- SplitView Container for Sidebar Overlay -->
     <SplitView x:Name="MainSplitView" DisplayMode="Overlay" PaneBackground="#202124" CompactPaneLength="0" OpenPaneLength="350">
-        
-        <!-- Left Pane: Library Sidebar (Bookmarks & History) -->
         <SplitView.Pane>
             <Pivot Title="Library" Margin="10" Foreground="White">
                 <PivotItem Header="Bookmarks">
@@ -27,7 +24,6 @@
                         </ListView.ItemTemplate>
                     </ListView>
                 </PivotItem>
-                
                 <PivotItem Header="History">
                     <ListView x:Name="HistoryListView" SelectionMode="Single" SelectionChanged="HistoryListView_SelectionChanged">
                         <ListView.ItemTemplate>
@@ -43,38 +39,37 @@
             </Pivot>
         </SplitView.Pane>
         
-        <!-- Main Content Area -->
         <Grid x:Name="RootGrid" Background="#202124" UseLayoutRounding="True">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/> <!-- Title Bar & Tabs -->
-                <RowDefinition Height="Auto"/> <!-- Omnibox -->
-                <RowDefinition Height="*"/>    <!-- WebView2 -->
+                <RowDefinition Height="36"/> <!-- Edge Tab Bar Height -->
+                <RowDefinition Height="40"/> <!-- Edge Nav Bar Height -->
+                <RowDefinition Height="*"/>  <!-- WebView2 -->
             </Grid.RowDefinitions>
 
-            <!-- Custom Title Bar & Tab Strip -->
-            <Grid Grid.Row="0" x:Name="AppTitleBar" Background="Transparent" Height="36" UseLayoutRounding="True">
+            <!-- Tab Bar -->
+            <Grid Grid.Row="0" x:Name="AppTitleBar" Background="Transparent" UseLayoutRounding="True">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="138"/> <!-- Reserve space for Window Controls -->
+                    <ColumnDefinition Width="138"/> <!-- Native Window Controls -->
                 </Grid.ColumnDefinitions>
 
                 <Grid Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/> <!-- Tabs -->
-                        <ColumnDefinition Width="Auto"/> <!-- New Tab Button -->
+                        <ColumnDefinition Width="Auto"/> <!-- New Tab -->
                     </Grid.ColumnDefinitions>
 
-                    <!-- Tab List View -->
                     <ListView x:Name="TabListView" 
                               Grid.Column="0"
                               ItemsSource="{x:Bind ViewModel.Tabs, Mode=OneWay}" 
                               SelectedItem="{x:Bind ViewModel.SelectedTab, Mode=TwoWay}"
                               SelectionChanged="TabListView_SelectionChanged"
                               CanReorderItems="True" AllowDrop="True"
-                              ScrollViewer.HorizontalScrollMode="Enabled" 
+                              ScrollViewer.HorizontalScrollMode="Auto" 
                               ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                               ScrollViewer.VerticalScrollMode="Disabled"
-                              Background="Transparent" Padding="0">
+                              Background="Transparent" Padding="0,0,0,0"
+                              ContextRequested="TabListView_ContextRequested">
                         <ListView.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <ItemsStackPanel Orientation="Horizontal"/>
@@ -82,13 +77,9 @@
                         </ListView.ItemsPanel>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:TabViewModel">
-                                <!-- 
-                                     Custom Tab Control.
-                                     Note: IsSelected binding removed to prevent compiler crash (WMC9999).
-                                     TabItemPresenter uses Title and event handlers.
-                                -->
                                 <controls:TabItemPresenter 
                                     Title="{x:Bind Title, Mode=OneWay}"
+                                    ContextRequested="Tab_ContextRequested"
                                     MiddleClicked="Tab_MiddleClicked"
                                     CloseClicked="Tab_CloseClicked">
                                 </controls:TabItemPresenter>
@@ -96,38 +87,59 @@
                         </ListView.ItemTemplate>
                     </ListView>
 
+                    <!-- New Tab Button: 28x28px, right-aligned after tabs -->
                     <Button Grid.Column="1" Content="+" Click="NewTab_Click" 
-                            VerticalAlignment="Center" Margin="4,0" ToolTipService.ToolTip="New Tab (Ctrl+T)" Foreground="White"/>
+                            Width="28" Height="28" VerticalAlignment="Center" Margin="8,0" 
+                            ToolTipService.ToolTip="New Tab (Ctrl+T)" Foreground="White"/>
                 </Grid>
             </Grid>
 
-            <!-- Omnibox & Navigation Toolbar -->
-            <Grid Grid.Row="1" Padding="8,4" ColumnSpacing="8">
+            <!-- Navigation Bar -->
+            <Grid Grid.Row="1" Padding="8,0,8,0" ColumnSpacing="4">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/> <!-- Nav Buttons -->
+                    <ColumnDefinition Width="12"/>   <!-- Group Spacing -->
+                    <ColumnDefinition Width="*"/>    <!-- Omnibox -->
+                    <ColumnDefinition Width="12"/>   <!-- Group Spacing -->
+                    <ColumnDefinition Width="Auto"/> <!-- Right Controls -->
                 </Grid.ColumnDefinitions>
                 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
-                    <Button Content="" Click="Home_Click" ToolTipService.ToolTip="Home"/>
-                    <Button x:Name="BackButton" Content="←" Click="Back_Click" IsEnabled="False" ToolTipService.ToolTip="Back"/>
-                    <Button x:Name="ForwardButton" Content="→" Click="Forward_Click" IsEnabled="False" ToolTipService.ToolTip="Forward"/>
-                    <Button Content="⟳" Click="Reload_Click" ToolTipService.ToolTip="Reload"/>
-                    <Button x:Name="BookmarkButton" Content="☆" Click="Bookmark_Click" ToolTipService.ToolTip="Bookmark (Ctrl+D)"/>
-                    <Button x:Name="DownloadButton" Content="📥" Click="Downloads_Click" ToolTipService.ToolTip="Downloads"/>
-                    <Button x:Name="SettingsButton" Content="⚙️" Click="Settings_Click" ToolTipService.ToolTip="Settings"/>
+                <!-- Left Nav Buttons (28x28, Icons 20x20, 4px spacing) -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <Button Content="🏠" Click="Home_Click" Width="28" Height="28" Padding="0" ToolTipService.ToolTip="Home"/>
+                    <Button x:Name="BackButton" Content="←" Click="Back_Click" Width="28" Height="28" Padding="0" IsEnabled="False" ToolTipService.ToolTip="Back"/>
+                    <Button x:Name="ForwardButton" Content="→" Click="Forward_Click" Width="28" Height="28" Padding="0" IsEnabled="False" ToolTipService.ToolTip="Forward"/>
+                    <Button Content="⟳" Click="Reload_Click" Width="28" Height="28" Padding="0" ToolTipService.ToolTip="Reload"/>
                 </StackPanel>
 
-                <TextBox x:Name="Omnibox"
-                         Grid.Column="1" 
-                         Text="{x:Bind ViewModel.OmniboxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                         PlaceholderText="Search Google or type a URL"
-                         KeyDown="Omnibox_KeyDown"
-                         Background="#303134" Foreground="White" BorderThickness="0"
-                         VerticalAlignment="Center" UseLayoutRounding="True"/>
+                <!-- Omnibox with Dynamic Icon -->
+                <Border Grid.Column="2" Background="#303134" CornerRadius="20" Height="32" VerticalAlignment="Center">
+                    <Grid Padding="12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Dynamic Icon: 🔒 for HTTPS, 🔍 for new tab/search -->
+                        <TextBlock x:Name="OmniboxIcon" Grid.Column="0" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        
+                        <TextBox x:Name="Omnibox" Grid.Column="1"
+                                 Text="{x:Bind ViewModel.OmniboxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 PlaceholderText="Search Google or type a URL"
+                                 KeyDown="Omnibox_KeyDown"
+                                 Background="Transparent" Foreground="White" BorderThickness="0"
+                                 VerticalAlignment="Center" Padding="0" FontSize="14"/>
+                    </Grid>
+                </Border>
+
+                <!-- Right Controls -->
+                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <Button x:Name="BookmarkButton" Content="☆" Click="Bookmark_Click" Width="28" Height="28" Padding="0" ToolTipService.ToolTip="Bookmark (Ctrl+D)"/>
+                    <Button x:Name="DownloadButton" Content="" Click="Downloads_Click" Width="28" Height="28" Padding="0" ToolTipService.ToolTip="Downloads"/>
+                    <Button x:Name="SettingsButton" Content="⚙️" Click="Settings_Click" Width="28" Height="28" Padding="0" ToolTipService.ToolTip="Settings"/>
+                </StackPanel>
             </Grid>
 
-            <!-- WebView2 Host -->
             <Grid Grid.Row="2" x:Name="WebViewHost" Background="#202124">
                 <WebView2 x:Name="MainWebView" DefaultBackgroundColor="Transparent"/>
             </Grid>
