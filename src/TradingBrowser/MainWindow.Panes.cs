@@ -2,13 +2,23 @@ using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using TradingBrowser.Services; // Required for LoggingService
+using TradingBrowser.Services;
+using TradingBrowser.ViewModels;
 
 namespace TradingBrowser;
 
 public sealed partial class MainWindow
 {
-    private async void SplitPane()
+    private TabViewModel? _secondaryTab;
+
+    private void TileTabs(TabViewModel primary, TabViewModel secondary)
+    {
+        ViewModel.SelectedTab = primary; // Loads into MainWebView
+        _secondaryTab = secondary;
+        SplitPane(secondary.Url);
+    }
+
+    private async void SplitPane(string? url = null)
     {
         if (_isSplitPaneActive) return;
         _isSplitPaneActive = true;
@@ -21,8 +31,17 @@ public sealed partial class MainWindow
         try
         {
             await SecondaryWebView.EnsureCoreWebView2Async();
-            SecondaryWebView.CoreWebView2.Navigate("https://www.tradingview.com");
-            LoggingService.Log("Secondary WebView initialized (Split Pane).");
+            
+            // Sync secondary WebView back to the TabViewModel
+            SecondaryWebView.CoreWebView2.DocumentTitleChanged += (s, e) => {
+                if (_secondaryTab != null) _secondaryTab.Title = SecondaryWebView.CoreWebView2.DocumentTitle;
+            };
+            SecondaryWebView.CoreWebView2.NavigationStarting += (s, e) => {
+                if (_secondaryTab != null) _secondaryTab.Url = e.Uri;
+            };
+
+            SecondaryWebView.CoreWebView2.Navigate(url ?? "https://www.tradingview.com");
+            LoggingService.Log("Secondary WebView initialized (Tiled).");
         }
         catch (Exception ex)
         {
@@ -34,15 +53,16 @@ public sealed partial class MainWindow
     {
         if (!_isSplitPaneActive) return;
         _isSplitPaneActive = false;
+        _secondaryTab = null;
 
         RightPaneColumn.Width = new GridLength(0);
         PaneDivider.Visibility = Visibility.Collapsed;
         RightPaneHost.Visibility = Visibility.Collapsed;
+        
+        ViewModel.UntileTabsCommand.Execute(null);
     }
 
     private void SplitPane_Click(object sender, RoutedEventArgs e) => SplitPane();
-    
-    // FIX: Handler for the new Close button in the split pane header
     private void CollapsePane_Click(object sender, RoutedEventArgs e) => CollapsePane();
 
     private void PaneDivider_DragDelta(object sender, DragDeltaEventArgs e)
