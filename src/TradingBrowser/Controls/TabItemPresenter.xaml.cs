@@ -20,7 +20,7 @@ public sealed partial class TabItemPresenter : UserControl
     public bool IsSelected { get => (bool)GetValue(IsSelectedProperty); set => SetValue(IsSelectedProperty, value); }
     public bool IsPinned { get => (bool)GetValue(IsPinnedProperty); set => SetValue(IsPinnedProperty, value); }
 
-    // FIX: Made public so x:Bind can safely resolve them during compilation
+    // Public for safe x:Bind resolution
     public SolidColorBrush BackgroundBrush => IsSelected 
         ? new SolidColorBrush(Color.FromArgb(255, 32, 33, 36)) 
         : new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
@@ -31,6 +31,7 @@ public sealed partial class TabItemPresenter : UserControl
 
     public event RoutedEventHandler? MiddleClicked;
     public event RoutedEventHandler? CloseClicked;
+    public event ContextRequestedEventHandler? ContextRequested;
 
     public TabItemPresenter()
     {
@@ -58,8 +59,6 @@ public sealed partial class TabItemPresenter : UserControl
         }
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        CloseClicked?.Invoke(this, new RoutedEventArgs());
-    }
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => CloseClicked?.Invoke(this, new RoutedEventArgs());
+    private void UserControl_ContextRequested(UIElement sender, ContextRequestedEventArgs args) => ContextRequested?.Invoke(sender, args);
 }
