@@ -46,11 +46,12 @@ public class DatabaseService
             cmd.ExecuteNonQuery();
 
             // Define SQL schema for all application tables
+            // FIX: Added 'Position INTEGER' to the Sessions table
             cmd.CommandText = @"
                 CREATE TABLE IF NOT EXISTS Settings (Key TEXT PRIMARY KEY, Value TEXT);
                 CREATE TABLE IF NOT EXISTS History (Id INTEGER PRIMARY KEY AUTOINCREMENT, Url TEXT, Title TEXT, VisitTime DATETIME);
                 CREATE TABLE IF NOT EXISTS Bookmarks (Id INTEGER PRIMARY KEY AUTOINCREMENT, Url TEXT, Title TEXT, Position INTEGER);
-                CREATE TABLE IF NOT EXISTS Sessions (Id INTEGER PRIMARY KEY AUTOINCREMENT, TabId TEXT, Url TEXT, Title TEXT, IsActive BOOLEAN);
+                CREATE TABLE IF NOT EXISTS Sessions (Id INTEGER PRIMARY KEY AUTOINCREMENT, TabId TEXT, Url TEXT, Title TEXT, IsActive BOOLEAN, Position INTEGER);
                 CREATE TABLE IF NOT EXISTS Downloads (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     FileName TEXT,
@@ -62,6 +63,18 @@ public class DatabaseService
             ";
             cmd.ExecuteNonQuery();
             
+            // MIGRATION FIX: If the user already has an old database without the Position column, 
+            // this safely adds it without crashing or deleting their data.
+            try
+            {
+                cmd.CommandText = "ALTER TABLE Sessions ADD COLUMN Position INTEGER;";
+                cmd.ExecuteNonQuery();
+            }
+            catch 
+            { 
+                // SQLite throws an exception if the column already exists. We safely ignore it.
+            }
+
             LoggingService.Log("Database schema initialized successfully.");
         }
         catch (Exception ex)
