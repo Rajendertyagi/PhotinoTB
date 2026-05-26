@@ -66,7 +66,32 @@ public sealed partial class MainWindow : Window
 
         SetupTitleBar();
         SetupEventHooks();
+        
+        // ✅ PRE-WARMING: Start caching the WebView2 environment immediately
+        _ = PreWarmWebViewEnvironmentAsync();
         _ = InitializeWebViewAsync();
+    }
+
+    /// <summary>
+    /// Pre-warms the WebView2 environment in the background.
+    /// This caches the CoreWebView2Environment so EnsureCoreWebView2Async() is instant.
+    /// </summary>
+    private async Task PreWarmWebViewEnvironmentAsync()
+    {
+        try
+        {
+            string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
+            Directory.CreateDirectory(userDataFolder);
+            
+            var options = new CoreWebView2EnvironmentOptions("--enable-features=msWebView2CodeCache --force-gpu-rasterization");
+            // This caches the environment globally for the process
+            await CoreWebView2Environment.CreateAsync(null, userDataFolder, options);
+            LoggingService.Log("WebView2 Environment pre-warmed successfully.");
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Error("WebView2 Pre-warm Error", ex);
+        }
     }
 
     private void UpdateOmniboxIcon()
@@ -107,13 +132,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
-            Directory.CreateDirectory(userDataFolder);
-
-            Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userDataFolder);
-            Environment.SetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--enable-features=msWebView2CodeCache --force-gpu-rasterization");
-            Environment.SetEnvironmentVariable("WEBVIEW2_LANGUAGE", "en-US");
-
+            // Environment is already pre-warmed, this will now return almost instantly
             await MainWebView.EnsureCoreWebView2Async();
             
             var settings = MainWebView.CoreWebView2.Settings;
@@ -151,7 +170,6 @@ public sealed partial class MainWindow : Window
                 ViewModel.InitializeSession(new List<TabViewModel>(), null);
             }
             
-            // ✅ LAZY UI: Removed RefreshSidebar() from here. It is now called only when Library is opened.
             UpdateOmniboxIcon();
         }
         catch (Exception ex)
@@ -160,7 +178,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // ✅ LAZY UI: Sidebar data is loaded only when requested
     private void RefreshSidebar()
     {
         var b = _hbService.GetBookmarks();
@@ -177,7 +194,6 @@ public sealed partial class MainWindow : Window
         if (ViewModel.SelectedTab != null)
         {
             bool isBookmarked = _hbService.IsBookmarked(ViewModel.SelectedTab.Url);
-            // Update Fluent Icon Glyph
             BookmarkIcon.Glyph = isBookmarked ? "\uE735" : "\uE734"; 
         }
     }
@@ -190,11 +206,9 @@ public sealed partial class MainWindow : Window
         if (isBookmarked) { _hbService.RemoveBookmark(url); BookmarkIcon.Glyph = "\uE734"; }
         else { _hbService.AddBookmark(url, title); BookmarkIcon.Glyph = "\uE735"; }
         
-        // Only refresh sidebar list if it's currently open (Lazy optimization)
         if (MainSplitView.IsPaneOpen) RefreshSidebar();
     }
 
-    // --- Sidebar Selection Handlers ---
     private void BookmarkListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (BookmarkListView.SelectedItem is ViewModels.BookmarkItem item)
@@ -215,7 +229,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // --- UI Click Handlers ---
     private void Bookmark_Click(object sender, RoutedEventArgs e) { if (ViewModel.SelectedTab != null) ToggleBookmark(ViewModel.SelectedTab.Url, ViewModel.SelectedTab.Title); }
     private void Downloads_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized) MainWebView.CoreWebView2.Navigate("about:downloads"); }
     private void Settings_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized) MainWebView.CoreWebView2.Navigate("about:settings"); }
@@ -225,14 +238,12 @@ public sealed partial class MainWindow : Window
     private void Home_Click(object sender, RoutedEventArgs e) { ViewModel.GoHomeCommand.Execute(null); }
     private void NewTab_Click(object sender, RoutedEventArgs e) { ViewModel.AddTabCommand.Execute(null); }
 
-    // ✅ LAZY UI: Library Button Click Handler
     private void Library_Click(object sender, RoutedEventArgs e)
     {
-        RefreshSidebar(); // Load data only when needed
+        RefreshSidebar(); 
         MainSplitView.IsPaneOpen = !MainSplitView.IsPaneOpen;
     }
 
-    // --- Tab Interaction Handlers ---
     private void Tab_ContextRequested(object sender, ContextRequestedEventArgs e)
     {
         if (sender is TabItemPresenter tabPresenter && tabPresenter.DataContext is TabViewModel tabVM)
@@ -277,7 +288,6 @@ public sealed partial class MainWindow : Window
             ViewModel.CloseTabCommand.Execute(tab); 
     }
 
-    // --- Async Web Message Router ---
     private async void CoreWebView2_WebMessageReceived(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
         string? msg = args.TryGetWebMessageAsString();
@@ -291,7 +301,6 @@ public sealed partial class MainWindow : Window
             await _navService.HandleWebMessageAsync(msg);
     }
 
-    // --- Fullscreen Toggle ---
     private void ToggleFullscreen()
     {
         var presenter = this.AppWindow.Presenter as OverlappedPresenter;
@@ -313,7 +322,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // --- WebView State Sync ---
     private void TabListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!_isWebViewInitialized || ViewModel.SelectedTab == null) return;
@@ -324,7 +332,6 @@ public sealed partial class MainWindow : Window
         if (MainWebView.CoreWebView2.Source != newTab.Url) MainWebView.CoreWebView2.Navigate(newTab.Url);
         UpdateOmniboxIcon();
         
-        // Update Bookmark Icon state for new tab
         bool isBookmarked = _hbService.IsBookmarked(newTab.Url);
         BookmarkIcon.Glyph = isBookmarked ? "\uE735" : "\uE734";
     }
@@ -358,7 +365,6 @@ public sealed partial class MainWindow : Window
         if (args.IsSuccess && ViewModel.SelectedTab != null)
         {
             _hbService.AddHistory(ViewModel.SelectedTab.Url, ViewModel.SelectedTab.Title);
-            // Only refresh sidebar if open
             if (MainSplitView.IsPaneOpen) RefreshSidebar();
         }
     }
