@@ -18,21 +18,34 @@ public sealed partial class MainWindow
         OmniboxIcon.Glyph = (isHttps && !isNewTab) ? "\uE72E" : "\uE721";
     }
 
-    // EDGE UI: Omnibox Focus & Hover Animations
     private void SetupOmniboxAnimations()
     {
         Omnibox.GotFocus += (s, e) => {
-            // FIX: Use Application.Current.Resources for global WinUI 3 theme brushes
             OmniboxBorder.Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseBrush"];
             OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"];
             OmniboxBorder.BorderThickness = new Thickness(1.5);
         };
         
         Omnibox.LostFocus += (s, e) => {
+            // Revert to the default Phase 1 micro-border state
             OmniboxBorder.Background = (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"];
-            OmniboxBorder.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-            OmniboxBorder.BorderThickness = new Thickness(0);
+            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"];
+            OmniboxBorder.BorderThickness = new Thickness(1);
         };
+    }
+
+    // PHASE 1: Live Theme Refresh
+    private void RefreshThemeBrushes()
+    {
+        // If the Omnibox is currently focused when the theme changes, update its active border
+        if (Omnibox.FocusState != FocusState.Unfocused)
+        {
+            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"];
+        }
+        else
+        {
+            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"];
+        }
     }
 
     private void Omnibox_KeyDown(object sender, KeyRoutedEventArgs e)
