@@ -64,9 +64,18 @@ public sealed partial class MainWindow : Window
 
         SetupTitleBar();
         SetupEventHooks();
-        SetupOmniboxAnimations(); // EDGE UI: Focus glow
+        SetupOmniboxAnimations(); 
         
+        // PHASE 1: Live Theme Hook
+        RootGrid.ActualThemeChanged += RootGrid_ActualThemeChanged;
+
         _ = InitializeWebViewAsync();
+    }
+
+    // PHASE 1: Force C# to re-fetch semantic brushes when OS toggles Light/Dark
+    private void RootGrid_ActualThemeChanged(FrameworkElement sender, object args)
+    {
+        RefreshThemeBrushes();
     }
 
     private void SetupTitleBar()
