@@ -2,42 +2,156 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using TradingBrowser.Helpers;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml;
 
 namespace TradingBrowser.Services;
 
 /// <summary>
+/// Represents an active download with UI-bindable properties for progress and state.
+/// </summary>
+public partial class ActiveDownload : ObservableObject
+{
+    private readonly CoreWebView2DownloadOperation _operation;
+    private readonly Action<string> _onStateChange;
+
+    public string FileName { get; }
+    public string SavePath { get; }
+    public string Url { get; }
+
+    [ObservableProperty] public partial double Progress { get; set; }
+    [ObservableProperty] public partial string StatusText { get; set; } = "Downloading...";
+    
+    // Visibility properties to avoid needing XAML IValueConverters
+    [ObservableProperty] public partial Visibility PauseVisibility { get; set; } = Visibility.Visible;
+    [ObservableProperty] public partial Visibility ResumeVisibility { get; set; } = Visibility.Collapsed;
+    [ObservableProperty] public partial Visibility CancelVisibility { get; set; } = Visibility.Visible;
+
+    public ActiveDownload(CoreWebView2DownloadOperation operation, string url, string fileName, string savePath, Action<string> onStateChange)
+    {
+        _operation = operation;
+        Url = url;
+        FileName = fileName;
+        SavePath = savePath;
+        _onStateChange = onStateChange;
+
+        _operation.BytesReceivedChanged += (s, e) => UpdateProgress();
+        _operation.EstimatedEndTimeChanged += (s, e) => UpdateProgress();
+        _operation.StateChanged += (s, e) => UpdateState();
+        
+        UpdateProgress();
+    }
+
+    private void UpdateProgress()
+    {
+        var received = _operation.BytesReceived;
+        var total = _operation.TotalBytesToReceive;
+        
+        if (total > 0)
+        {
+            Progress = (double)received / total * 100;
+            StatusText = $"{FormatBytes(received)} / {FormatBytes(total)}";
+        }
+        else
+        {
+            StatusText = $"{FormatBytes(received)} / Unknown";
+        }
+    }
+
+    private void UpdateState()
+    {
+        switch (_operation.State)
+        {
+            case CoreWebView2DownloadState.InProgress:
+                PauseVisibility = Visibility.Visible;
+                ResumeVisibility = Visibility.Collapsed;
+                CancelVisibility = Visibility.Visible;
+                StatusText = "Downloading...";
+                break;
+            case CoreWebView2DownloadState.Interrupted:
+                PauseVisibility = Visibility.Collapsed;
+                ResumeVisibility = Visibility.Visible;
+                CancelVisibility = Visibility.Visible;
+                StatusText = "Paused";
+                _onStateChange("Paused");
+                break;
+            case CoreWebView2DownloadState.Completed:
+                PauseVisibility = Visibility.Collapsed;
+                ResumeVisibility = Visibility.Collapsed;
+                CancelVisibility = Visibility.Collapsed;
+                Progress = 100;
+                StatusText = "Completed";
+                _onStateChange("Completed");
+                break;
+        }
+    }
+
+    [RelayCommand]
+    public void Pause()
+    {
+        if (_operation.State == CoreWebView2DownloadState.InProgress)
+            _operation.Pause();
+    }
+
+    [RelayCommand]
+    public void Resume()
+    {
+        if (_operation.State == CoreWebView2DownloadState.Interrupted)
+            _operation.Resume();
+    }
+
+    [RelayCommand]
+    public void Cancel()
+    {
+        _operation.Cancel();
+        StatusText = "Cancelled";
+        _onStateChange("Cancelled");
+    }
+
+    private string FormatBytes(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        int order = 0;
+        double size = bytes;
+        while (size >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            size = size / 1024;
+        }
+        return $"{size:0.##} {sizes[order]}";
+    }
+}
+
+/// <summary>
 /// Manages browser downloads, intercepting them to save to a configurable folder 
-/// and logging history to SQLite. Supports runtime path updates.
+/// and logging history to SQLite. Supports runtime path updates and active UI tracking.
 /// </summary>
 public class DownloadService
 {
     private readonly DatabaseService _db;
-    private string _downloadsFolder; // Non-readonly to support runtime path updates
-
+    private string _downloadsFolder;
+    
     /// <summary>
-    /// Initializes the service with the database connection and default download path.
+    /// Observable collection for the XAML UI to bind to for active downloads.
     /// </summary>
+    public ObservableCollection<ActiveDownload> ActiveDownloads { get; } = new();
+
     public DownloadService(DatabaseService db)
     {
         _db = db;
-        // Default to portable ./Downloads folder relative to executable
         _downloadsFolder = Path.Combine(AppContext.BaseDirectory, "Downloads");
         Directory.CreateDirectory(_downloadsFolder);
     }
 
-    /// <summary>
-    /// Hooks into WebView2 events to intercept and manage downloads.
-    /// </summary>
     public void Initialize(CoreWebView2 webView)
     {
         webView.DownloadStarting += WebView_DownloadStarting;
     }
 
-    /// <summary>
-    /// Intercepts download start, redirects to portable folder, handles duplicates, and logs to SQLite.
-    /// </summary>
     private void WebView_DownloadStarting(CoreWebView2 sender, CoreWebView2DownloadStartingEventArgs args)
     {
         try
@@ -45,7 +159,6 @@ public class DownloadService
             string fileName = Path.GetFileName(args.ResultFilePath);
             string savePath = Path.Combine(_downloadsFolder, fileName);
             
-            // Handle duplicate filenames by appending a counter
             if (File.Exists(savePath))
             {
                 string ext = Path.GetExtension(fileName);
@@ -58,12 +171,22 @@ public class DownloadService
                 }
             }
 
-            // Redirect download to our managed folder
             args.ResultFilePath = savePath;
-            args.Handled = true;
+            args.Handled = true; // Cancel default browser prompt
             
-            // Log to SQLite immediately
             SaveDownloadToDb(args.DownloadOperation.Uri, fileName, savePath, "InProgress");
+            
+            var activeDownload = new ActiveDownload(
+                args.DownloadOperation, 
+                args.DownloadOperation.Uri, 
+                fileName, 
+                savePath,
+                (state) => UpdateDownloadStateInDb(savePath, state)
+            );
+            
+            // Add to UI collection (WebView2 events fire on the UI thread)
+            ActiveDownloads.Add(activeDownload);
+            
             LoggingService.Log($"Download started: {fileName}");
         }
         catch (Exception ex)
@@ -72,9 +195,24 @@ public class DownloadService
         }
     }
 
-    /// <summary>
-    /// Inserts a new download record into the SQLite database.
-    /// </summary>
+    private void UpdateDownloadStateInDb(string savePath, string state)
+    {
+        try
+        {
+            using var conn = _db.GetConnection();
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "UPDATE Downloads SET State = @state WHERE SavePath = @path;";
+            cmd.Parameters.AddWithValue("@state", state);
+            cmd.Parameters.AddWithValue("@path", savePath);
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Error("Failed to update download state", ex);
+        }
+    }
+
     private void SaveDownloadToDb(string url, string fileName, string path, string state)
     {
         try
@@ -96,9 +234,6 @@ public class DownloadService
         }
     }
 
-    /// <summary>
-    /// Deletes a specific download record from SQLite by ID.
-    /// </summary>
     public void DeleteDownload(int id)
     {
         try
@@ -116,9 +251,6 @@ public class DownloadService
         }
     }
 
-    /// <summary>
-    /// Clears all download history from SQLite. Does not delete actual files.
-    /// </summary>
     public void ClearAllDownloads()
     {
         try
@@ -135,9 +267,6 @@ public class DownloadService
         }
     }
 
-    /// <summary>
-    /// Updates the download directory at runtime. Creates the folder if it doesn't exist.
-    /// </summary>
     public void UpdateDownloadPath(string newPath)
     {
         if (string.IsNullOrWhiteSpace(newPath)) return;
@@ -154,9 +283,6 @@ public class DownloadService
         }
     }
 
-    /// <summary>
-    /// Retrieves the full download history ordered by most recent.
-    /// </summary>
     public List<DownloadRecord> GetHistory()
     {
         var records = new List<DownloadRecord>();
@@ -188,9 +314,6 @@ public class DownloadService
     }
 }
 
-/// <summary>
-/// Data transfer object for download records. Used for UI binding and HTML generation.
-/// </summary>
 public class DownloadRecord
 {
     public int Id { get; set; }
