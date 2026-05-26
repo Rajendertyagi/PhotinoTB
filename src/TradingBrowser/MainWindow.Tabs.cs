@@ -45,12 +45,13 @@ public sealed partial class MainWindow
 
     private void Tab_ContextRequested(object sender, ContextRequestedEventArgs e)
     {
-        // Get all currently selected tabs (for Vivaldi-style tiling)
         var selectedTabs = TabListView.SelectedItems.Cast<TabViewModel>().ToList();
         
-        if (sender is TabItemPresenter tabPresenter && tabPresenter.DataContext is TabViewModel tabVM)
+        // FIX: Safely assign tabPresenter to avoid CS0165 unassigned variable error
+        TabItemPresenter? tabPresenter = sender as TabItemPresenter;
+        
+        if (tabPresenter?.DataContext is TabViewModel tabVM)
         {
-            // If the right-clicked tab isn't in the selection, just use it
             if (!selectedTabs.Contains(tabVM))
             {
                 selectedTabs = new List<TabViewModel> { tabVM };
@@ -91,13 +92,16 @@ public sealed partial class MainWindow
 
         menu.SystemBackdrop = new DesktopAcrylicBackdrop();
 
-        if (e.TryGetPosition(tabPresenter, out Point point))
+        // FIX: Fallback to RootGrid if tabPresenter is somehow null
+        UIElement targetElement = tabPresenter ?? (UIElement)RootGrid;
+
+        if (e.TryGetPosition(targetElement, out Point point))
         {
-            menu.ShowAt(tabPresenter, new FlyoutShowOptions { Position = point });
+            menu.ShowAt(targetElement, new FlyoutShowOptions { Position = point });
         }
         else
         {
-            menu.ShowAt(tabPresenter);
+            menu.ShowAt(targetElement);
         }
         e.Handled = true;
     }
