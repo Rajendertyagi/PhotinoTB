@@ -1,7 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives; // Added for FlyoutShowOptions
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media; // Added for DesktopAcrylicBackdrop
+using Microsoft.UI.Xaml.Media; 
 using Microsoft.Web.WebView2.Core;
 using TradingBrowser.ViewModels;
 using TradingBrowser.Services;
@@ -9,7 +10,7 @@ using TradingBrowser.Helpers;
 using TradingBrowser.Controls;
 using System;
 using System.IO;
-using System.Linq; // Added for LINQ in Context Menu
+using System.Linq; 
 using System.Threading.Tasks;
 using Microsoft.UI.Windowing;
 using System.Collections.Generic;
@@ -273,7 +274,15 @@ public sealed partial class MainWindow : Window
             // MASTER PLAN: Apply Desktop Acrylic to transient UI (Context Menu)
             menu.SystemBackdrop = new DesktopAcrylicBackdrop();
 
-            menu.ShowAt(tabPresenter, e.GetPosition(tabPresenter));
+            // FIX: ContextRequestedEventArgs uses TryGetPosition in WinUI 3
+            if (e.TryGetPosition(tabPresenter, out Windows.Foundation.Point point))
+            {
+                menu.ShowAt(tabPresenter, new FlyoutShowOptions { Position = point });
+            }
+            else
+            {
+                menu.ShowAt(tabPresenter);
+            }
             e.Handled = true;
         }
     }
