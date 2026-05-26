@@ -3,244 +3,220 @@ using System.Net;
 namespace TradingBrowser.Services;
 
 /// <summary>
-/// Generates the HTML content for the in-browser Settings page.
-/// Matches the requested design: Sidebar navigation + Main content area.
+/// Generates the complete Settings page HTML/CSS/JS.
+/// Matches your confirmed preferences: Dark-only, HTTPS warning, FolderPicker bridge, Restart banner.
 /// </summary>
 public static class SettingsPageGenerator
 {
     /// <summary>
-    /// Generates the complete HTML for the Settings page.
+    /// Generates the full Settings page with all categories and controls.
     /// </summary>
-    public static string GenerateHtml()
+    public static string GenerateHtml(
+        string searchEngine, bool showSuggestions, bool showFullUrls,
+        bool httpsWarning, bool clearDataPending,
+        string downloadPath, bool askBeforeSave,
+        string startupMode, string startupPages)
     {
-        return @"
+        return $@"
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset='utf-8'>
             <title>Settings</title>
             <style>
-                :root {
-                    --bg-color: #202124;
-                    --sidebar-bg: #202124;
-                    --content-bg: #202124;
-                    --text-color: #e8eaed;
-                    --text-secondary: #9aa0a6;
-                    --hover-bg: #303134;
-                    --active-bg: #303134;
-                    --active-text: #8ab4f8;
-                    --border-color: #3c4043;
-                    --card-bg: #292a2d;
-                }
-                body {
-                    background-color: var(--bg-color);
-                    color: var(--text-color);
-                    font-family: 'Segoe UI', sans-serif;
-                    margin: 0;
-                    display: flex;
-                    height: 100vh;
-                    overflow: hidden;
-                }
-                /* Sidebar Styles */
-                .sidebar {
-                    width: 240px;
-                    background-color: var(--sidebar-bg);
-                    padding: 20px 10px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 5px;
-                    border-right: 1px solid var(--border-color);
-                }
-                .sidebar-title {
-                    font-size: 24px;
-                    font-weight: 500;
-                    padding: 0 15px 20px 15px;
-                    color: var(--text-color);
-                }
-                .nav-item {
-                    padding: 10px 15px;
-                    cursor: pointer;
-                    border-radius: 4px;
-                    color: var(--text-secondary);
-                    font-size: 14px;
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    transition: background 0.2s;
-                }
-                .nav-item:hover {
-                    background-color: var(--hover-bg);
-                    color: var(--text-color);
-                }
-                .nav-item.active {
-                    background-color: var(--active-bg);
-                    color: var(--active-text);
-                    font-weight: 500;
-                }
-                /* Main Content Styles */
-                .main-content {
-                    flex-grow: 1;
-                    padding: 40px;
-                    overflow-y: auto;
-                    background-color: var(--content-bg);
-                }
-                .section-header {
-                    font-size: 22px;
-                    font-weight: 400;
-                    margin-bottom: 20px;
-                }
-                .setting-card {
-                    background-color: var(--card-bg);
-                    border-radius: 8px;
-                    padding: 20px;
-                    max-width: 800px;
-                    margin-bottom: 20px;
-                }
-                .setting-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 15px 0;
-                    border-bottom: 1px solid var(--border-color);
-                }
-                .setting-row:last-child {
-                    border-bottom: none;
-                }
-                .setting-info h3 {
-                    margin: 0 0 5px 0;
-                    font-size: 14px;
-                    font-weight: 500;
-                }
-                .setting-info p {
-                    margin: 0;
-                    font-size: 12px;
-                    color: var(--text-secondary);
-                }
-                /* Toggle Switch */
-                .switch {
-                    position: relative;
-                    display: inline-block;
-                    width: 36px;
-                    height: 20px;
-                }
-                .switch input { opacity: 0; width: 0; height: 0; }
-                .slider {
-                    position: absolute;
-                    cursor: pointer;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background-color: #5f6368;
-                    transition: .4s;
-                    border-radius: 20px;
-                }
-                .slider:before {
-                    position: absolute;
-                    content: '';
-                    height: 14px;
-                    width: 14px;
-                    left: 3px;
-                    bottom: 3px;
-                    background-color: white;
-                    transition: .4s;
-                    border-radius: 50%;
-                }
-                input:checked + .slider { background-color: #8ab4f8; }
-                input:checked + .slider:before { transform: translateX(16px); }
-                
-                /* Dropdown */
-                select {
-                    background: #303134;
-                    color: #e8eaed;
-                    border: 1px solid #5f6368;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                }
+                :root {{
+                    --bg: #202124; --card: #292a2d; --text: #e8eaed; --sub: #9aa0a6;
+                    --border: #3c4043; --accent: #8ab4f8; --hover: #303134; --danger: #f28b82;
+                }}
+                body {{ background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }}
+                .sidebar {{ width: 240px; padding: 20px 10px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid var(--border); }}
+                .nav-item {{ padding: 10px 15px; cursor: pointer; border-radius: 4px; color: var(--sub); font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.15s; }}
+                .nav-item:hover {{ background: var(--hover); color: var(--text); }}
+                .nav-item.active {{ background: var(--hover); color: var(--accent); font-weight: 500; }}
+                .main {{ flex: 1; padding: 40px; overflow-y: auto; }}
+                .section {{ display: none; max-width: 800px; }}
+                .section.active {{ display: block; }}
+                .card {{ background: var(--card); border-radius: 8px; padding: 24px; margin-bottom: 16px; }}
+                .row {{ display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }}
+                .row:last-child {{ border-bottom: none; }}
+                .label h3 {{ margin: 0 0 6px 0; font-size: 14px; font-weight: 500; }}
+                .label p {{ margin: 0; font-size: 12px; color: var(--sub); }}
+                .toggle {{ position: relative; width: 40px; height: 20px; }}
+                .toggle input {{ opacity: 0; width: 0; height: 0; }}
+                .slider {{ position: absolute; inset: 0; background: #5f6368; border-radius: 20px; cursor: pointer; transition: 0.2s; }}
+                .slider:before {{ content: ''; position: absolute; width: 14px; height: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s; }}
+                input:checked + .slider {{ background: var(--accent); }}
+                input:checked + .slider:before {{ transform: translateX(20px); }}
+                select, input {{ background: var(--hover); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-size: 13px; }}
+                select:focus, input:focus {{ outline: none; border-color: var(--accent); }}
+                .btn {{ background: var(--hover); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }}
+                .btn:hover {{ background: var(--border); }}
+                .btn-primary {{ background: var(--accent); color: #000; border: none; }}
+                .btn-danger {{ background: var(--danger); color: #000; border: none; }}
+                .path-display {{ font-family: monospace; font-size: 12px; color: var(--sub); margin-top: 6px; word-break: break-all; }}
+                /* Restart Banner */
+                .banner {{ position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); border: 1px solid var(--accent); border-radius: 8px; padding: 12px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: transform 0.3s ease; z-index: 100; }}
+                .banner.show {{ transform: translateX(-50%) translateY(0); }}
+                .banner p {{ margin: 0; font-size: 14px; }}
+                .banner .actions {{ display: flex; gap: 8px; }}
             </style>
         </head>
         <body>
             <div class='sidebar'>
-                <div class='sidebar-title'>Settings</div>
-                <div class='nav-item active' onclick='showSection(""search"")'>🔍 Search engine</div>
-                <div class='nav-item' onclick='showSection(""appearance"")'> Appearance</div>
+                <div class='nav-item active' onclick='showSection(""search"")'>🔍 Search</div>
                 <div class='nav-item' onclick='showSection(""privacy"")'>🔒 Privacy</div>
-                <div class='nav-item' onclick='showSection(""performance"")'>⚡ Performance</div>
+                <div class='nav-item' onclick='showSection(""downloads"")'>⬇️ Downloads</div>
+                <div class='nav-item' onclick='showSection(""startup"")'> Startup</div>
+                <div class='nav-item' onclick='showSection(""appearance"")'>🎨 Appearance</div>
             </div>
             
-            <div class='main-content'>
-                <!-- Search Engine Section -->
-                <div id='search' class='settings-section'>
-                    <div class='section-header'>Search engine</div>
-                    <div class='setting-card'>
-                        <div class='setting-row'>
-                            <div class='setting-info'>
+            <div class='main'>
+                <!-- Search Section -->
+                <div id='search' class='section active'>
+                    <h2>Search engine</h2>
+                    <div class='card'>
+                        <div class='row'>
+                            <div class='label'>
                                 <h3>Search engine</h3>
-                                <p>The search engine used for address bar searches.</p>
+                                <p>Used in the address bar and new tabs.</p>
                             </div>
-                            <select id='engineSelect' onchange='saveSetting(""SearchEngine"", this.value)'>
-                                <option value='Google'>Google</option>
-                                <option value='Bing'>Bing</option>
-                                <option value='DuckDuckGo'>DuckDuckGo</option>
+                            <select id='engine' onchange='save("SearchEngine", this.value)'>
+                                <option value='Google' {0}>Google</option>
+                                <option value='Bing' {1}>Bing</option>
+                                <option value='DuckDuckGo' {2}>DuckDuckGo</option>
                             </select>
                         </div>
-                        <div class='setting-row'>
-                            <div class='setting-info'>
-                                <h3>Suggestions from the search engine</h3>
-                                <p>Get suggestions as you type.</p>
+                        <div class='row'>
+                            <div class='label'>
+                                <h3>Show search suggestions</h3>
+                                <p>Get predictions as you type.</p>
                             </div>
-                            <label class='switch'>
-                                <input type='checkbox' checked id='suggestToggle' onchange='saveSetting(""Suggestions"", this.checked)'>
-                                <span class='slider'></span>
-                            </label>
+                            <label class='toggle'><input type='checkbox' id='suggestions' {3} onchange='save("ShowSuggestions", this.checked)'><span class='slider'></span></label>
+                        </div>
+                        <div class='row'>
+                            <div class='label'>
+                                <h3>Show full URLs</h3>
+                                <p>Display complete address bar text.</p>
+                            </div>
+                            <label class='toggle'><input type='checkbox' id='fullUrls' {4} onchange='save("ShowFullUrls", this.checked)'><span class='slider'></span></label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Appearance Section (Placeholder) -->
-                <div id='appearance' class='settings-section' style='display:none;'>
-                    <div class='section-header'>Appearance</div>
-                    <div class='setting-card'>
-                        <div class='setting-row'>
-                            <div class='setting-info'>
+                <!-- Privacy Section -->
+                <div id='privacy' class='section'>
+                    <h2>Privacy and security</h2>
+                    <div class='card'>
+                        <div class='row'>
+                            <div class='label'>
+                                <h3>HTTPS-Only Mode</h3>
+                                <p>Warn before loading insecure HTTP pages.</p>
+                            </div>
+                            <label class='toggle'><input type='checkbox' id='httpsWarn' {5} onchange='save("HttpsWarning", this.checked)'><span class='slider'></span></label>
+                        </div>
+                        <div class='row'>
+                            <div class='label'>
+                                <h3>Clear browsing data</h3>
+                                <p>Delete cache, cookies, and history.</p>
+                            </div>
+                            <button class='btn btn-danger' onclick='clearData()'>Clear data</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Downloads Section -->
+                <div id='downloads' class='section'>
+                    <h2>Downloads</h2>
+                    <div class='card'>
+                        <div class='row'>
+                            <div class='label'>
+                                <h3>Download location</h3>
+                                <p>Files will be saved here.</p>
+                                <div class='path-display' id='dlPathDisplay'>{6}</div>
+                            </div>
+                            <button class='btn' onclick='changeDownloadPath()'>Change</button>
+                        </div>
+                        <div class='row'>
+                            <div class='label'>
+                                <h3>Ask where to save each file</h3>
+                                <p>Always prompt for save location.</p>
+                            </div>
+                            <label class='toggle'><input type='checkbox' id='askSave' {7} onchange='save("AskBeforeSave", this.checked)'><span class='slider'></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Startup Section -->
+                <div id='startup' class='section'>
+                    <h2>On startup</h2>
+                    <div class='card'>
+                        <div class='row'>
+                            <div class='label'>
+                                <h3>Continue where you left off</h3>
+                                <p>Restore previous session automatically.</p>
+                            </div>
+                            <label class='toggle'><input type='checkbox' id='restoreSession' {8} onchange='save("RestoreSession", this.checked)'><span class='slider'></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance Section -->
+                <div id='appearance' class='section'>
+                    <h2>Appearance</h2>
+                    <div class='card'>
+                        <div class='row'>
+                            <div class='label'>
                                 <h3>Theme</h3>
-                                <p>Currently set to Dark mode.</p>
+                                <p>Currently locked to Dark mode for performance consistency.</p>
                             </div>
+                            <span style='color: var(--sub); font-size: 13px;'>🌙 Dark (Fixed)</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Privacy Section (Placeholder) -->
-                <div id='privacy' class='settings-section' style='display:none;'>
-                    <div class='section-header'>Privacy and security</div>
-                    <div class='setting-card'>
-                        <p>Cookies and site data management will go here.</p>
-                    </div>
-                </div>
-
-                <!-- Performance Section (Placeholder) -->
-                <div id='performance' class='settings-section' style='display:none;'>
-                    <div class='section-header'>Performance</div>
-                    <div class='setting-card'>
-                        <p>Memory saver and hardware acceleration toggles.</p>
-                    </div>
+            <!-- Restart Banner -->
+            <div class='banner' id='restartBanner'>
+                <p>Some settings require a restart.</p>
+                <div class='actions'>
+                    <button class='btn' onclick='dismissBanner()'>Dismiss</button>
+                    <button class='btn btn-primary' onclick='restartApp()'>Restart now</button>
                 </div>
             </div>
 
             <script>
-                // Navigation Logic
-                function showSection(id) {
-                    // Hide all sections
-                    document.querySelectorAll('.settings-section').forEach(el => el.style.display = 'none');
-                    // Show selected
+                function showSection(id) {{
+                    document.querySelectorAll('.section').forEach(el => el.style.display = 'none');
                     document.getElementById(id).style.display = 'block';
-                    
-                    // Update sidebar active state
                     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                     event.target.classList.add('active');
-                }
+                }}
 
-                // Save Logic
-                function saveSetting(key, value) {
+                function save(key, value) {{
                     window.chrome.webview.postMessage('SETTING_UPDATE:' + key + ':' + value);
-                }
+                    // Show restart banner for specific settings
+                    if (['HttpsWarning', 'AskBeforeSave', 'RestoreSession'].includes(key)) {{
+                        document.getElementById('restartBanner').classList.add('show');
+                    }}
+                }}
+
+                function clearData() {{
+                    if (confirm('Clear all browsing data? This cannot be undone.')) {{
+                        window.chrome.webview.postMessage('CLEAR_ALL_DATA');
+                    }}
+                }}
+
+                function changeDownloadPath() {{
+                    window.chrome.webview.postMessage('CHANGE_DOWNLOAD_PATH');
+                }}
+
+                function restartApp() {{
+                    window.chrome.webview.postMessage('RESTART_APP');
+                }}
+
+                function dismissBanner() {{
+                    document.getElementById('restartBanner').classList.remove('show');
+                }}
             </script>
         </body>
         </html>";
