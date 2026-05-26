@@ -15,55 +15,6 @@
         <MicaBackdrop Kind="BaseAlt"/>
     </Window.SystemBackdrop>
 
-    <Window.Resources>
-        <!-- EDGE UI: Ghost Button Style with Fluent Hover/Pressed States -->
-        <Style x:Key="EdgeToolbarButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Grid x:Name="RootGrid" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal"/>
-                                    <VisualState x:Name="PointerOver">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ControlFillColorSecondaryBrush}"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ControlFillColorTertiaryBrush}"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Opacity">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="0.8"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="Disabled">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Opacity">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="0.4"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                            <ContentPresenter x:Name="ContentPresenter" Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
-
     <SplitView x:Name="MainSplitView" DisplayMode="Overlay" PaneBackground="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}" CompactPaneLength="0" OpenPaneLength="350">
         
         <SplitView.Pane>
@@ -96,8 +47,57 @@
         </SplitView.Pane>
         
         <Grid x:Name="RootGrid" Background="Transparent" UseLayoutRounding="True">
+            <!-- FIX: Moved Resources from Window to Grid (WinUI 3 requirement) -->
+            <Grid.Resources>
+                <Style x:Key="EdgeToolbarButtonStyle" TargetType="Button">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Width" Value="32"/>
+                    <Setter Property="Height" Value="32"/>
+                    <Setter Property="CornerRadius" Value="4"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Grid x:Name="ButtonRootGrid" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                                    <VisualStateManager.VisualStateGroups>
+                                        <VisualStateGroup x:Name="CommonStates">
+                                            <VisualState x:Name="Normal"/>
+                                            <VisualState x:Name="PointerOver">
+                                                <Storyboard>
+                                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ButtonRootGrid" Storyboard.TargetProperty="Background">
+                                                        <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ControlFillColorSecondaryBrush}"/>
+                                                    </ObjectAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </VisualState>
+                                            <VisualState x:Name="Pressed">
+                                                <Storyboard>
+                                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ButtonRootGrid" Storyboard.TargetProperty="Background">
+                                                        <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ControlFillColorTertiaryBrush}"/>
+                                                    </ObjectAnimationUsingKeyFrames>
+                                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Opacity">
+                                                        <DiscreteObjectKeyFrame KeyTime="0" Value="0.8"/>
+                                                    </ObjectAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </VisualState>
+                                            <VisualState x:Name="Disabled">
+                                                <Storyboard>
+                                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Opacity">
+                                                        <DiscreteObjectKeyFrame KeyTime="0" Value="0.4"/>
+                                                    </ObjectAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateManager.VisualStateGroups>
+                                    <ContentPresenter x:Name="ContentPresenter" Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Grid.Resources>
+
             <Grid.RowDefinitions>
-                <RowDefinition Height="40"/> <!-- Increased slightly for Pill Tabs -->
+                <RowDefinition Height="40"/> 
                 <RowDefinition Height="44"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
@@ -188,7 +188,6 @@
                     </Button>
                 </StackPanel>
 
-                <!-- EDGE UI: Omnibox with Focus Border Animation -->
                 <Border x:Name="OmniboxBorder" Grid.Column="2" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="16" Height="32" VerticalAlignment="Center" BorderThickness="0" BorderBrush="Transparent">
                     <Grid Padding="12,0">
                         <Grid.ColumnDefinitions>
