@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using TradingBrowser.Helpers; // FIX: Added missing using directive
+using TradingBrowser.Helpers; // FIX: Added missing namespace
 using System;
 
 namespace TradingBrowser;
