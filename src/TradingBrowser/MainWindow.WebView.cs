@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.Web.WebView2.Core;
 using TradingBrowser.Services;
 using TradingBrowser.Helpers;
+using TradingBrowser.ViewModels;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -18,9 +19,8 @@ public sealed partial class MainWindow
             string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
             Directory.CreateDirectory(userDataFolder);
             
-            // FIX: Explicitly instantiate options to satisfy the specific SDK version compiler
-            var options = new CoreWebView2EnvironmentOptions();
-            await CoreWebView2Environment.CreateAsync(null, userDataFolder, options);
+            // FIX: Dropped the 3rd argument to satisfy the specific WebView2 SDK version
+            await CoreWebView2Environment.CreateAsync(null, userDataFolder);
             LoggingService.Log("WebView2 Environment pre-warmed successfully.");
         }
         catch (Exception ex)
@@ -67,7 +67,7 @@ public sealed partial class MainWindow
             }
             else
             {
-                ViewModel.InitializeSession(new List<ViewModels.TabViewModel>(), null);
+                ViewModel.InitializeSession(new List<TabViewModel>(), null);
             }
             
             UpdateOmniboxIcon();
@@ -115,7 +115,6 @@ public sealed partial class MainWindow
             
             if (!args.IsSuccess)
             {
-                // FIX: Use sender.Source instead of args.Uri (which doesn't exist on CompletedEventArgs)
                 string currentUrl = sender.Source;
 
                 if (args.WebErrorStatus == CoreWebView2WebErrorStatus.ConnectionAborted || 
