@@ -32,10 +32,12 @@ jobs:
         dotnet-version: '10.0.x'
 
     # Restores NuGet packages and publishes the app as a Framework-Dependent portable build
+    # Added --verbosity detailed to force the XAML compiler to log every file it processes.
+    # The broken file will be the last path printed before the WMC9999 crash.
     - name: Restore & Publish
       run: |
         dotnet restore src/TradingBrowser/TradingBrowser.csproj
-        dotnet publish src/TradingBrowser/TradingBrowser.csproj -c Release -r win-x64 -o ./publish
+        dotnet publish src/TradingBrowser/TradingBrowser.csproj -c Release -r win-x64 -o ./publish --verbosity detailed
 
     # Downloads the official Microsoft WebView2 Evergreen Bootstrapper to bundle with the portable app
     - name: Download WebView2 Bootstrapper
@@ -49,6 +51,8 @@ jobs:
       run: |
         New-Item -ItemType Directory -Force -Path "./publish/UserData"
         New-Item -ItemType Directory -Force -Path "./publish/logs"
+        New-Item -ItemType Directory -Force -Path "./publish/Downloads"
+        New-Item -ItemType Directory -Force -Path "./publish/Scripts"
 
     # Packages the published output into a uniquely named ZIP file for the release
     - name: Package Zip
