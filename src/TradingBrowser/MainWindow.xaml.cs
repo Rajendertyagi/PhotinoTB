@@ -65,7 +65,7 @@ public sealed partial class MainWindow : Window
         SetupTitleBar();
         SetupEventHooks();
         
-        _ = PreWarmWebViewEnvironmentAsync();
+        // Pre-warm removed to prevent SDK overload resolution errors. EnsureCoreWebView2Async handles init.
         _ = InitializeWebViewAsync();
     }
 
