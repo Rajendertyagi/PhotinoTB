@@ -1,8 +1,9 @@
+using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using TradingBrowser.Helpers; // <-- THIS LINE IS REQUIRED
-using System;
+using TradingBrowser.Helpers;
+using TradingBrowser.Services;
 
 namespace TradingBrowser;
 
