@@ -10,6 +10,7 @@
     mc:Ignorable="d"
     Title="TradingBrowser">
 
+    <!-- MASTER PLAN: Mica Alt Backdrop (Foundation Layer) -->
     <Window.SystemBackdrop>
         <MicaBackdrop Kind="BaseAlt"/>
     </Window.SystemBackdrop>
@@ -133,7 +134,8 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         
-                        <TextBlock x:Name="OmniboxIcon" Grid.Column="0" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <!-- MASTER PLAN: Replaced Omnibox Text Emojis with Fluent UI FontIcon -->
+                        <FontIcon x:Name="OmniboxIcon" Grid.Column="0" Glyph="&#xE721;" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         
                         <TextBox x:Name="Omnibox" Grid.Column="1"
                                  Text="{x:Bind ViewModel.OmniboxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
@@ -154,6 +156,7 @@
                         <FontIcon Glyph="&#xE896;" FontSize="14" Foreground="White"/>
                         <Button.Flyout>
                             <Flyout Placement="BottomEdgeAlignedRight">
+                                <!-- MASTER PLAN: Desktop Acrylic for Transient UI -->
                                 <Flyout.SystemBackdrop>
                                     <DesktopAcrylicBackdrop/>
                                 </Flyout.SystemBackdrop>
