@@ -26,10 +26,10 @@ namespace TradingBrowser.Controls
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register("Title", typeof(string), typeof(TabItemPresenter), new PropertyMetadata("New Tab"));
 
-        // FIX 1: Changed TappedRoutedEventArgs to PointerRoutedEventArgs
-        public event EventHandler<PointerRoutedEventArgs> MiddleClicked;
-        public event EventHandler<ContextRequestedEventArgs> ContextRequested;
-        public event EventHandler<RoutedEventArgs> CloseClicked;
+        // FIX: Added '?' to make events nullable, resolving CS8618
+        public event EventHandler<PointerRoutedEventArgs>? MiddleClicked;
+        public event EventHandler<ContextRequestedEventArgs>? ContextRequested;
+        public event EventHandler<RoutedEventArgs>? CloseClicked;
 
         private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
@@ -48,7 +48,6 @@ namespace TradingBrowser.Controls
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             CloseClicked?.Invoke(this, e);
-            // FIX 2: Removed e.Handled = true; because RoutedEventArgs doesn't support it.
         }
     }
 }
