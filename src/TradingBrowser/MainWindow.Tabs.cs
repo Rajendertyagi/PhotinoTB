@@ -47,7 +47,7 @@ public sealed partial class MainWindow
     {
         var selectedTabs = TabListView.SelectedItems.Cast<TabViewModel>().ToList();
         
-        // FIX: Safely assign tabPresenter to avoid CS0165 unassigned variable error
+        // Safely assign tabPresenter to avoid CS0165 unassigned variable error
         TabItemPresenter? tabPresenter = sender as TabItemPresenter;
         
         if (tabPresenter?.DataContext is TabViewModel tabVM)
@@ -92,8 +92,8 @@ public sealed partial class MainWindow
 
         menu.SystemBackdrop = new DesktopAcrylicBackdrop();
 
-        // FIX: Fallback to RootGrid if tabPresenter is somehow null
-        UIElement targetElement = tabPresenter ?? (UIElement)RootGrid;
+        // FIX: Changed UIElement to FrameworkElement to satisfy MenuFlyout.ShowAt() signature
+        FrameworkElement targetElement = tabPresenter ?? (FrameworkElement)RootGrid;
 
         if (e.TryGetPosition(targetElement, out Point point))
         {
