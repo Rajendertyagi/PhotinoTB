@@ -1,8 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives; // Added for FlyoutShowOptions
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media; 
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Web.WebView2.Core;
 using TradingBrowser.ViewModels;
 using TradingBrowser.Services;
@@ -10,30 +10,24 @@ using TradingBrowser.Helpers;
 using TradingBrowser.Controls;
 using System;
 using System.IO;
-using System.Linq; 
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.UI.Windowing;
 using System.Collections.Generic;
 
 namespace TradingBrowser;
 
-/// <summary>
-/// Main application window. Follows clean MVVM architecture with WinUI 3 native controls.
-/// Handles UI initialization, event wiring, WebView2 lifecycle, and service delegation.
-/// </summary>
 public sealed partial class MainWindow : Window
 {
     public MainViewModel ViewModel { get; } = new();
     private bool _isWebViewInitialized;
     
-    // Core Services
     private readonly SessionService _sessionService;
     private readonly ShortcutService _shortcutService;
     private readonly HistoryBookmarkService _hbService;
     private readonly DownloadService _downloadService;
     private WebViewNavigationService? _navService;
     
-    // JavaScript Injectors
     private readonly string _shortcutsJs;
     private readonly string _tradingViewJs;
 
@@ -42,34 +36,28 @@ public sealed partial class MainWindow : Window
         this.InitializeComponent();
         RootGrid.DataContext = this; 
         
-        // Enforce Dark Theme globally
         if (this.Content is FrameworkElement content) 
             content.RequestedTheme = ElementTheme.Dark;
 
-        // Initialize Backend Services
         _sessionService = new SessionService(App.Db!);
         _hbService = new HistoryBookmarkService(App.Db!);
         _downloadService = new DownloadService(App.Db!);
         
-        // Initialize Shortcut Service with WebView access delegate
         _shortcutService = new ShortcutService(
             ViewModel, 
             () => _isWebViewInitialized ? MainWebView.CoreWebView2 : null
         );
 
-        // Hook Bookmark Shortcut (Ctrl+D)
         _shortcutService.BookmarkRequested += () => {
             if (ViewModel.SelectedTab != null)
                 ToggleBookmark(ViewModel.SelectedTab.Url, ViewModel.SelectedTab.Title);
         };
 
-        // Sync Omnibox Icon when URL/Tab changes
         ViewModel.PropertyChanged += (s, e) => {
             if (e.PropertyName == nameof(MainViewModel.SelectedTab) || e.PropertyName == nameof(MainViewModel.OmniboxText))
                 UpdateOmniboxIcon();
         };
 
-        // Load JavaScript Injectors
         string shortcutsPath = Path.Combine(AppContext.BaseDirectory, "Scripts", "shortcuts.js");
         _shortcutsJs = File.Exists(shortcutsPath) ? File.ReadAllText(shortcutsPath) : "";
 
@@ -81,9 +69,6 @@ public sealed partial class MainWindow : Window
         _ = InitializeWebViewAsync();
     }
 
-    /// <summary>
-    /// Updates the omnibox icon based on current URL (🔒 for HTTPS, 🔍 otherwise).
-    /// </summary>
     private void UpdateOmniboxIcon()
     {
         string url = ViewModel.OmniboxText ?? "";
@@ -104,17 +89,14 @@ public sealed partial class MainWindow : Window
 
     private void SetupEventHooks()
     {
-        // Route raw pointer/keyboard events to ShortcutService
         RootGrid.PointerPressed += (s, e) => _shortcutService.HandlePointerPressed(e);
         RootGrid.KeyDown += (s, e) => _shortcutService.HandleUiKeyDown(e);
         
-        // Delegate ViewModel actions to WebView
         ViewModel.NavigationRequested += url => { if (_isWebViewInitialized) MainWebView.CoreWebView2.Navigate(url); };
         ViewModel.FocusOmniboxRequested += () => { Omnibox.Focus(FocusState.Programmatic); Omnibox.SelectAll(); };
         ViewModel.ToggleFullscreenRequested += ToggleFullscreen;
         ViewModel.OpenDevToolsRequested += () => { if (_isWebViewInitialized) MainWebView.CoreWebView2.OpenDevToolsWindow(); };
 
-        // Persist session on window close
         this.AppWindow.Closing += (s, e) => {
             if (ViewModel.SelectedTab != null)
                 _sessionService.SaveSession(ViewModel.Tabs, ViewModel.SelectedTab.Id.ToString());
@@ -128,14 +110,12 @@ public sealed partial class MainWindow : Window
             string userDataFolder = Path.Combine(AppContext.BaseDirectory, "UserData", "Profile");
             Directory.CreateDirectory(userDataFolder);
 
-            // Bypass compiler overload bugs using official WebView2 environment variables
             Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userDataFolder);
             Environment.SetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--enable-features=msWebView2CodeCache --force-gpu-rasterization");
             Environment.SetEnvironmentVariable("WEBVIEW2_LANGUAGE", "en-US");
 
             await MainWebView.EnsureCoreWebView2Async();
             
-            // Configure WebView2 settings
             var settings = MainWebView.CoreWebView2.Settings;
             settings.IsStatusBarEnabled = false;
             settings.AreDefaultContextMenusEnabled = true;
@@ -144,17 +124,14 @@ public sealed partial class MainWindow : Window
             settings.IsPinchZoomEnabled = false;
             settings.IsSwipeNavigationEnabled = false;
             
-            // Attach WebView2 event handlers
             MainWebView.CoreWebView2.DocumentTitleChanged += CoreWebView2_DocumentTitleChanged;
             MainWebView.CoreWebView2.NavigationStarting += CoreWebView2_NavigationStarting;
             MainWebView.CoreWebView2.NavigationCompleted += CoreWebView2_NavigationCompleted;
             MainWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
             
-            // Initialize Download Manager & Navigation Service (pass 'this' for FolderPicker bridge)
             _downloadService.Initialize(MainWebView.CoreWebView2);
             _navService = new WebViewNavigationService(_downloadService, MainWebView.CoreWebView2, this);
             
-            // Inject JS scripts
             if (!string.IsNullOrEmpty(_shortcutsJs))
                 await MainWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(_shortcutsJs);
             if (!string.IsNullOrEmpty(_tradingViewJs))
@@ -163,7 +140,6 @@ public sealed partial class MainWindow : Window
             _isWebViewInitialized = true;
             LoggingService.Log("WebView2 initialized successfully.");
 
-            // Session Restore Logic
             bool shouldRestore = SettingsService.Get("RestoreSession", "true") == "true";
             if (shouldRestore)
             {
@@ -175,7 +151,7 @@ public sealed partial class MainWindow : Window
                 ViewModel.InitializeSession(new List<TabViewModel>(), null);
             }
             
-            RefreshSidebar();
+            // ✅ LAZY UI: Removed RefreshSidebar() from here. It is now called only when Library is opened.
             UpdateOmniboxIcon();
         }
         catch (Exception ex)
@@ -184,9 +160,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// Refreshes Sidebar ListViews with latest SQLite data.
-    /// </summary>
+    // ✅ LAZY UI: Sidebar data is loaded only when requested
     private void RefreshSidebar()
     {
         var b = _hbService.GetBookmarks();
@@ -203,22 +177,21 @@ public sealed partial class MainWindow : Window
         if (ViewModel.SelectedTab != null)
         {
             bool isBookmarked = _hbService.IsBookmarked(ViewModel.SelectedTab.Url);
-            BookmarkButton.Content = isBookmarked ? "★" : "☆";
+            // Update Fluent Icon Glyph
+            BookmarkIcon.Glyph = isBookmarked ? "\uE735" : "\uE734"; 
         }
     }
 
-    /// <summary>
-    /// Toggles bookmark status for current URL.
-    /// </summary>
     private void ToggleBookmark(string url, string title)
     {
         if (string.IsNullOrEmpty(url)) return;
         bool isBookmarked = _hbService.IsBookmarked(url);
         
-        if (isBookmarked) { _hbService.RemoveBookmark(url); BookmarkButton.Content = "☆"; }
-        else { _hbService.AddBookmark(url, title); BookmarkButton.Content = "★"; }
+        if (isBookmarked) { _hbService.RemoveBookmark(url); BookmarkIcon.Glyph = "\uE734"; }
+        else { _hbService.AddBookmark(url, title); BookmarkIcon.Glyph = "\uE735"; }
         
-        RefreshSidebar();
+        // Only refresh sidebar list if it's currently open (Lazy optimization)
+        if (MainSplitView.IsPaneOpen) RefreshSidebar();
     }
 
     // --- Sidebar Selection Handlers ---
@@ -252,6 +225,13 @@ public sealed partial class MainWindow : Window
     private void Home_Click(object sender, RoutedEventArgs e) { ViewModel.GoHomeCommand.Execute(null); }
     private void NewTab_Click(object sender, RoutedEventArgs e) { ViewModel.AddTabCommand.Execute(null); }
 
+    // ✅ LAZY UI: Library Button Click Handler
+    private void Library_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshSidebar(); // Load data only when needed
+        MainSplitView.IsPaneOpen = !MainSplitView.IsPaneOpen;
+    }
+
     // --- Tab Interaction Handlers ---
     private void Tab_ContextRequested(object sender, ContextRequestedEventArgs e)
     {
@@ -271,10 +251,8 @@ public sealed partial class MainWindow : Window
             };
             menu.Items.Add(closeOtherItem);
 
-            // MASTER PLAN: Apply Desktop Acrylic to transient UI (Context Menu)
             menu.SystemBackdrop = new DesktopAcrylicBackdrop();
 
-            // FIX: ContextRequestedEventArgs uses TryGetPosition in WinUI 3
             if (e.TryGetPosition(tabPresenter, out Windows.Foundation.Point point))
             {
                 menu.ShowAt(tabPresenter, new FlyoutShowOptions { Position = point });
@@ -310,7 +288,7 @@ public sealed partial class MainWindow : Window
         else if (msg.StartsWith("LOG:")) 
             LoggingService.Log(msg, "WEBVIEW_JS");
         else if (_navService != null) 
-            await _navService.HandleWebMessageAsync(msg); // Async routing for settings/downloads actions
+            await _navService.HandleWebMessageAsync(msg);
     }
 
     // --- Fullscreen Toggle ---
@@ -345,11 +323,14 @@ public sealed partial class MainWindow : Window
         ViewModel.OmniboxText = newTab.Url;
         if (MainWebView.CoreWebView2.Source != newTab.Url) MainWebView.CoreWebView2.Navigate(newTab.Url);
         UpdateOmniboxIcon();
+        
+        // Update Bookmark Icon state for new tab
+        bool isBookmarked = _hbService.IsBookmarked(newTab.Url);
+        BookmarkIcon.Glyph = isBookmarked ? "\uE735" : "\uE734";
     }
 
     private void CoreWebView2_NavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
     {
-        // Route special URIs (about:settings, about:downloads)
         if (_navService != null && _navService.HandleSpecialUri(args.Uri))
         {
             args.Cancel = true;
@@ -372,14 +353,13 @@ public sealed partial class MainWindow : Window
             if (!args.IsSuccess) LoggingService.Error($"Nav Failed: {args.WebErrorStatus}");
         }
         
-        // Update nav button states
         ViewModel.UpdateNavigationState(sender.CanGoBack, sender.CanGoForward);
 
-        // Log successful navigation to history
         if (args.IsSuccess && ViewModel.SelectedTab != null)
         {
             _hbService.AddHistory(ViewModel.SelectedTab.Url, ViewModel.SelectedTab.Title);
-            RefreshSidebar();
+            // Only refresh sidebar if open
+            if (MainSplitView.IsPaneOpen) RefreshSidebar();
         }
     }
 
