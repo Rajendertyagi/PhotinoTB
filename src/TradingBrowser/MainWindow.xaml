@@ -174,10 +174,11 @@
 
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:TabViewModel">
-                                <!-- ✅ FIXED: All event handlers attached for right-click, middle-click, close -->
+                                <!-- ✅ FIX: TabContextRequested (renamed from ContextRequested to avoid conflict) -->
                                 <controls:TabItemPresenter 
                                     Title="{x:Bind Title, Mode=OneWay}"
-                                    ContextRequested="Tab_ContextRequested"
+                                    IsActive="{x:Bind IsActive, Mode=OneWay}"
+                                    TabContextRequested="Tab_ContextRequested"
                                     MiddleClicked="Tab_MiddleClicked"
                                     CloseClicked="Tab_CloseClicked"/>
                             </DataTemplate>
@@ -208,10 +209,10 @@
                         <Button Click="Home_Click" Style="{StaticResource EdgeToolbarButtonStyle}" ToolTipService.ToolTip="Home">
                             <FontIcon Glyph="&#xE80F;" FontSize="14" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </Button>
-                        <Button x:Name="BackButton" Click="Back_Click" Style="{StaticResource EdgeToolbarButtonStyle}" IsEnabled="False" ToolTipService.ToolTip="Back">
+                        <Button x:Name="BackButton" Click="Back_Click" Style="{StaticResource EdgeToolbarButtonStyle}" IsEnabled="{x:Bind ViewModel.CanGoBack, Mode=OneWay}" ToolTipService.ToolTip="Back">
                             <FontIcon Glyph="&#xE72B;" FontSize="14" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </Button>
-                        <Button x:Name="ForwardButton" Click="Forward_Click" Style="{StaticResource EdgeToolbarButtonStyle}" IsEnabled="False" ToolTipService.ToolTip="Forward">
+                        <Button x:Name="ForwardButton" Click="Forward_Click" Style="{StaticResource EdgeToolbarButtonStyle}" IsEnabled="{x:Bind ViewModel.CanGoForward, Mode=OneWay}" ToolTipService.ToolTip="Forward">
                             <FontIcon Glyph="&#xE72A;" FontSize="14" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </Button>
                         <Button Click="Reload_Click" Style="{StaticResource EdgeToolbarButtonStyle}" ToolTipService.ToolTip="Reload">
@@ -219,7 +220,6 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- ✅ FIXED OMNIBOX: Text visibility and binding -->
                     <Border x:Name="OmniboxBorder" Grid.Column="2" 
                             Background="{ThemeResource ControlFillColorDefaultBrush}" 
                             CornerRadius="6" 
