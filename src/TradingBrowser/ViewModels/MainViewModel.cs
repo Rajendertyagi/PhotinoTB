@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using TradingBrowser.Helpers;
+using TradingBrowser.Services; // ✅ FIX: Added missing namespace for LoggingService
 
 namespace TradingBrowser.ViewModels;
 
@@ -44,12 +45,42 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand] private void AddTab() { var t = new TabViewModel { Id = Guid.NewGuid(), Title = "New Tab", Url = "https://www.google.com" }; Tabs.Add(t); SelectedTab = t; }
-    [RelayCommand] private void CloseTab(TabViewModel? tab) { if (tab == null) return; int i = Tabs.IndexOf(tab); _closedTabs.Push(tab.Url); Tabs.Remove(tab); if (Tabs.Count == 0) { AddTab(); return; } SelectedTab = Tabs[System.Math.Max(0, i - 1)]; }
+    
+    [RelayCommand] private void CloseTab(TabViewModel? tab) 
+    { 
+        if (tab == null) return; 
+        int i = Tabs.IndexOf(tab); 
+        _closedTabs.Push(tab.Url); 
+        Tabs.Remove(tab); 
+        if (Tabs.Count == 0) { AddTab(); return; } 
+        SelectedTab = Tabs[System.Math.Max(0, i - 1)]; 
+    }
+    
     [RelayCommand] private void ReopenClosedTab() { if (_closedTabs.Any()) AddTab(); }
-    [RelayCommand] private void DuplicateTab(TabViewModel? tab) { if (tab != null) { var t = new TabViewModel { Id = Guid.NewGuid(), Title = tab.Title + " (Copy)", Url = tab.Url }; Tabs.Add(t); SelectedTab = t; } }
+    
+    [RelayCommand] private void DuplicateTab(TabViewModel? tab) 
+    { 
+        if (tab != null) 
+        { 
+            var t = new TabViewModel { Id = Guid.NewGuid(), Title = tab.Title + " (Copy)", Url = tab.Url }; 
+            Tabs.Add(t); 
+            SelectedTab = t; 
+        } 
+    }
+    
     [RelayCommand] private void PinTab(TabViewModel? tab) { }
-    [RelayCommand] private void CloseOtherTabs(TabViewModel? tab) { if (tab != null) { Tabs.Clear(); Tabs.Add(tab); SelectedTab = tab; } }
-    [RelayCommand] private void CloseTabsToRight(TabViewModel? tab) { if (tab == null) return; int idx = Tabs.IndexOf(tab); for (int i = Tabs.Count - 1; i > idx; i--) Tabs.RemoveAt(i); }
+    
+    [RelayCommand] private void CloseOtherTabs(TabViewModel? tab) 
+    { 
+        if (tab != null) { Tabs.Clear(); Tabs.Add(tab); SelectedTab = tab; } 
+    }
+    
+    [RelayCommand] private void CloseTabsToRight(TabViewModel? tab) 
+    { 
+        if (tab == null) return; 
+        int idx = Tabs.IndexOf(tab); 
+        for (int i = Tabs.Count - 1; i > idx; i--) Tabs.RemoveAt(i); 
+    }
 
     [RelayCommand] private void NavigateOmnibox()
     {
@@ -63,6 +94,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand] private void NavigateToUrl(string url) { OmniboxText = url; NavigationRequested?.Invoke(url); }
 
     public void UpdateNavigationState(bool canGoBack, bool canGoForward) { CanGoBack = canGoBack; CanGoForward = canGoForward; }
+    
     public void NextTab() { if (SelectedTab != null) SelectedTab = Tabs[(Tabs.IndexOf(SelectedTab) + 1) % Tabs.Count]; }
     public void PreviousTab() { if (SelectedTab != null) SelectedTab = Tabs[(Tabs.IndexOf(SelectedTab) - 1 + Tabs.Count) % Tabs.Count]; }
     public void SwitchToTab(int index) { if (index >= 0 && index < Tabs.Count) SelectedTab = Tabs[index]; }
@@ -85,5 +117,13 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand] private void UntileTabs() { TiledTabs.Clear(); CurrentTilingLayout = TilingLayout.None; TilingTabsChanged?.Invoke(TiledTabs); TilingLayoutChanged?.Invoke(TilingLayout.None); }
-    [RelayCommand] private void SwitchTilingLayout(TilingLayout layout) { if (TiledTabs.Count >= 2 && layout != CurrentTilingLayout) { CurrentTilingLayout = layout; TilingLayoutChanged?.Invoke(layout); } }
+    
+    [RelayCommand] private void SwitchTilingLayout(TilingLayout layout) 
+    { 
+        if (TiledTabs.Count >= 2 && layout != CurrentTilingLayout) 
+        { 
+            CurrentTilingLayout = layout; 
+            TilingLayoutChanged?.Invoke(layout); 
+        } 
+    }
 }
