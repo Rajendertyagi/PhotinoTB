@@ -8,7 +8,6 @@ namespace TradingBrowser;
 
 public partial class App : Application
 {
-    // FIX: Changed back to DatabaseService instead of raw SqliteConnection
     public static DatabaseService? Db { get; private set; } 
     private Window? m_window;
 
@@ -27,14 +26,9 @@ public partial class App : Application
         {
             LoggingService.Info("App startup initiated.");
 
-            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TradingBrowser");
-            if (!Directory.Exists(appDataPath)) Directory.CreateDirectory(appDataPath);
-            
-            string dbPath = Path.Combine(appDataPath, "data.db");
-            
-            // FIX: Instantiate your custom DatabaseService wrapper
-            // (If your original code used a different constructor, paste your exact original line here)
-            Db = new DatabaseService(dbPath); 
+            // FIX: Reverted to parameterless constructor. 
+            // Your wrapper likely handles the AppData path internally.
+            Db = new DatabaseService(); 
             
             LoggingService.Info("Database schema initialized successfully.");
 
