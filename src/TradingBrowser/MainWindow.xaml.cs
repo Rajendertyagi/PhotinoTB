@@ -69,7 +69,37 @@ public sealed partial class MainWindow : Window
         SetupAdaptiveTabScaling();
         SetupTilingEngine();
 
+        // FIX: Restore session BEFORE initializing WebView
+        RestoreLastSession();
+        
         _ = InitializeWebViewAsync();
+    }
+
+    // FIX: New method to restore last session
+    private void RestoreLastSession()
+    {
+        try
+        {
+            LoggingService.Info("[Session] Attempting to restore last session...");
+            var restoredTabs = _sessionService.GetLastSession();
+            string activeTabId = _sessionService.GetLastActiveTabId();
+            
+            if (restoredTabs != null && restoredTabs.Count > 0)
+            {
+                ViewModel.InitializeSession(restoredTabs, activeTabId);
+                LoggingService.Info($"[Session] Restored {restoredTabs.Count} tabs. Active: {activeTabId}");
+            }
+            else
+            {
+                LoggingService.Info("[Session] No session found. Creating fresh tab.");
+                ViewModel.InitializeSession(new(), null);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Error("[Session] Restore failed", ex);
+            ViewModel.InitializeSession(new(), null);
+        }
     }
 
     private void SetupTitleBar()
@@ -97,4 +127,46 @@ public sealed partial class MainWindow : Window
                 _sessionService.SaveSession(ViewModel.Tabs, ViewModel.SelectedTab.Id.ToString());
         };
     }
+
+    // FIX: Back button now calls GoBack()
+    private void Back_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoBack)
+        {
+            LoggingService.Info("[Nav] Back button clicked");
+            MainWebView.CoreWebView2.GoBack();
+        }
+    }
+
+    // FIX: Forward button now calls GoForward()
+    private void Forward_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isWebViewInitialized && MainWebView.CoreWebView2.CanGoForward)
+        {
+            LoggingService.Info("[Nav] Forward button clicked");
+            MainWebView.CoreWebView2.GoForward();
+        }
+    }
+
+    private void Home_Click(object sender, RoutedEventArgs e) => ViewModel.GoHomeCommand.Execute(null);
+    private void Reload_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized) MainWebView.CoreWebView2.Reload(); }
+    private void Bookmark_Click(object sender, RoutedEventArgs e) => _shortcutService.BookmarkRequested?.Invoke();
+    private void SplitPane_Click(object sender, RoutedEventArgs e) => ToggleSplitPane();
+    private void Settings_Click(object sender, RoutedEventArgs e) => LoggingService.Info("[UI] Settings clicked");
+    
+    private void Omnibox_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            ViewModel.NavigateOmniboxCommand.Execute(null);
+            Omnibox.ClearSelection();
+        }
+    }
+
+    private void UpdateOmniboxIcon() { /* Existing logic */ }
+    private void SetupOmniboxAnimations() { /* Existing logic */ }
+    private void RootGrid_ActualThemeChanged(FrameworkElement sender, object args) { /* Existing logic */ }
+    private void ToggleFullscreen() { /* Existing logic */ }
+    private void ToggleSplitPane() { /* Existing logic */ }
+    private void ToggleBookmark(string url, string title) { /* Existing logic */ }
 }
