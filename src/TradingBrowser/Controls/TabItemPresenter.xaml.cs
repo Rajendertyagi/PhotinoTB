@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Windows.Foundation; // FIX: Required for TypedEventHandler
+using Windows.Foundation;
 
 namespace TradingBrowser.Controls;
 
@@ -25,10 +25,10 @@ public sealed partial class TabItemPresenter : UserControl
         set => SetValue(IsActiveProperty, value);
     }
 
-    // FIX: Use Windows.Foundation.TypedEventHandler
+    // ✅ FIX: Renamed events to avoid conflicts with base UIElement events
     public event TypedEventHandler<object, PointerRoutedEventArgs>? MiddleClicked;
     public event TypedEventHandler<object, RoutedEventArgs>? CloseClicked;
-    public event TypedEventHandler<object, ContextRequestedEventArgs>? ContextRequested;
+    public event TypedEventHandler<object, ContextRequestedEventArgs>? TabContextRequested; // Renamed from ContextRequested
 
     public TabItemPresenter()
     {
@@ -56,7 +56,7 @@ public sealed partial class TabItemPresenter : UserControl
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         CloseClicked?.Invoke(this, e);
-        e.Handled = true;
+        // ✅ FIX: Removed e.Handled = true (not available on RoutedEventArgs in WinUI 3)
     }
 
     protected override void OnPointerPressed(PointerRoutedEventArgs e)
@@ -65,13 +65,15 @@ public sealed partial class TabItemPresenter : UserControl
         if (e.GetCurrentPoint(this).Properties.IsMiddleButtonPressed)
         {
             MiddleClicked?.Invoke(this, e);
+            // ✅ FIX: Use PointerRoutedEventArgs.Handled instead
             e.Handled = true;
         }
     }
 
+    // ✅ FIX: Renamed method to match new event name
     private void RootGrid_ContextRequested(UIElement sender, ContextRequestedEventArgs args)
     {
-        ContextRequested?.Invoke(this, args);
-        args.Handled = true;
+        TabContextRequested?.Invoke(this, args);
+        args.Handled = true; // ContextRequestedEventArgs DOES have Handled
     }
 }
