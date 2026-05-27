@@ -16,8 +16,21 @@ public partial class MainViewModel : ObservableObject
 {
     [ObservableProperty] private TabViewModel? _selectedTab;
     [ObservableProperty] private string _omniboxText = string.Empty;
-    [ObservableProperty] private bool _canGoBack;
-    [ObservableProperty] private bool _canGoForward;
+    
+    // ✅ FIX: Manual implementation to avoid CS0111 source generator conflict
+    private bool _canGoBack;
+    public bool CanGoBack
+    {
+        get => _canGoBack;
+        set => SetProperty(ref _canGoBack, value);
+    }
+
+    private bool _canGoForward;
+    public bool CanGoForward
+    {
+        get => _canGoForward;
+        set => SetProperty(ref _canGoForward, value);
+    }
 
     [ObservableProperty] private TilingLayout _currentTilingLayout = TilingLayout.None;
     public ObservableCollection<TabViewModel> TiledTabs { get; } = [];
