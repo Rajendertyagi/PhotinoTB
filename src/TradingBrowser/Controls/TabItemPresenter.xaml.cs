@@ -1,65 +1,85 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using System;
 
-namespace TradingBrowser.Controls
+namespace TradingBrowser.Controls;
+
+public sealed partial class TabItemPresenter : UserControl
 {
-    public sealed partial class TabItemPresenter : UserControl
+    public static readonly DependencyProperty TitleProperty =
+        DependencyProperty.Register(nameof(Title), typeof(string), typeof(TabItemPresenter), new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty IsActiveProperty =
+        DependencyProperty.Register(nameof(IsActive), typeof(bool), typeof(TabItemPresenter), new PropertyMetadata(false, OnIsActiveChanged));
+
+    public string Title
     {
-        public TabItemPresenter()
-        {
-            this.InitializeComponent();
-        }
+        get => (string)GetValue(TitleProperty);
+        set => SetValue(TitleProperty, value);
+    }
 
-        public string Title
-        {
-            get { return (string)GetValue(TitleProperty); }
-            set { SetValue(TitleProperty, value); }
-        }
-        public static readonly DependencyProperty TitleProperty =
-            DependencyProperty.Register("Title", typeof(string), typeof(TabItemPresenter), new PropertyMetadata("New Tab"));
+    public bool IsActive
+    {
+        get => (bool)GetValue(IsActiveProperty);
+        set => SetValue(IsActiveProperty, value);
+    }
 
-        // EDGE UI: Active State Property
-        public bool IsActive
-        {
-            get { return (bool)GetValue(IsActiveProperty); }
-            set { SetValue(IsActiveProperty, value); }
-        }
-        public static readonly DependencyProperty IsActiveProperty =
-            DependencyProperty.Register("IsActive", typeof(bool), typeof(TabItemPresenter), new PropertyMetadata(false, OnIsActiveChanged));
+    public event TypedEventHandler<object, PointerRoutedEventArgs>? MiddleClicked;
+    public event TypedEventHandler<object, RoutedEventArgs>? CloseClicked;
+    public event TypedEventHandler<object, ContextRequestedEventArgs>? ContextRequested;
 
-        private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    public TabItemPresenter()
+    {
+        this.InitializeComponent();
+    }
+
+    private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is TabItemPresenter presenter)
         {
-            if (d is TabItemPresenter presenter)
+            if (presenter.IsActive)
             {
-                bool isActive = (bool)e.NewValue;
-                VisualStateManager.GoToState(presenter, isActive ? "Active" : "Normal", true);
+                VisualStateManager.GoToState(presenter, "Active", true);
+            }
+            else
+            {
+                VisualStateManager.GoToState(presenter, "Inactive", true);
             }
         }
+    }
 
-        public event EventHandler<PointerRoutedEventArgs>? MiddleClicked;
-        public new event EventHandler<ContextRequestedEventArgs>? ContextRequested;
-        public event EventHandler<RoutedEventArgs>? CloseClicked;
+    private void RootGrid_PointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        CloseButton.Visibility = Visibility.Visible;
+    }
 
-        private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private void RootGrid_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (!IsActive)
         {
-            if (e.GetCurrentPoint(this).Properties.IsMiddleButtonPressed)
-            {
-                MiddleClicked?.Invoke(this, e);
-                e.Handled = true;
-            }
+            CloseButton.Visibility = Visibility.Collapsed;
         }
+    }
 
-        private void RootGrid_ContextRequested(UIElement sender, ContextRequestedEventArgs args)
-        {
-            ContextRequested?.Invoke(this, args);
-            args.Handled = true; 
-        }
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        CloseClicked?.Invoke(this, e);
+        e.Handled = true;
+    }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
+    protected override void OnPointerPressed(PointerRoutedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        if (e.GetCurrentPoint(this).Properties.IsMiddleButtonPressed)
         {
-            CloseClicked?.Invoke(this, e);
+            MiddleClicked?.Invoke(this, e);
+            e.Handled = true;
         }
+    }
+
+    private void RootGrid_ContextRequested(UIElement sender, ContextRequestedEventArgs args)
+    {
+        ContextRequested?.Invoke(this, args);
+        args.Handled = true;
     }
 }
