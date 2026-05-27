@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using TradingBrowser.Services;
+using SQLite; // FIX: Added missing namespace for SQLiteConnection
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -8,15 +9,13 @@ namespace TradingBrowser;
 
 public partial class App : Application
 {
-    // Keep your existing Db property exactly as it was
-    public static SQLite.SQLiteConnection? Db { get; private set; } 
+    public static SQLiteConnection? Db { get; private set; } // Changed to SQLiteConnection
     private Window? m_window;
 
     public App()
     {
         this.InitializeComponent();
         
-        // GLOBAL EXCEPTION HOOKS
         this.UnhandledException += App_UnhandledException;
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
@@ -28,19 +27,16 @@ public partial class App : Application
         {
             LoggingService.Info("App startup initiated.");
 
-            // ==========================================
-            // PASTE YOUR EXACT ORIGINAL DB CODE HERE
-            // (Replace my placeholder below with your working code)
-            // ==========================================
+            // --- PASTE YOUR EXACT ORIGINAL DB INITIALIZATION HERE ---
             string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TradingBrowser");
             if (!Directory.Exists(appDataPath)) Directory.CreateDirectory(appDataPath);
             
             string dbPath = Path.Combine(appDataPath, "data.db");
-            // Example: Db = new SQLite.SQLiteConnection(dbPath);
-            // Example: Db.CreateTable<...>();
+            Db = new SQLiteConnection(dbPath);
+            // Db.CreateTable<YourModels>(); 
             
             LoggingService.Info("Database schema initialized successfully.");
-            // ==========================================
+            // --------------------------------------------------------
 
             m_window = new MainWindow();
             m_window.Activate();
@@ -57,7 +53,6 @@ public partial class App : Application
         e.Handled = true; 
     }
 
-    // FIX: Fully qualified System.UnhandledExceptionEventArgs to prevent CS0104
     private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
     {
         if (e.ExceptionObject is Exception ex)
