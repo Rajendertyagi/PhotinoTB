@@ -19,7 +19,6 @@
     <SplitView x:Name="MainSplitView" DisplayMode="Overlay" PaneBackground="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}" CompactPaneLength="0" OpenPaneLength="350">
         
         <SplitView.Pane>
-            <!-- PHASE 1: 1px Micro-border on Sidebar -->
             <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
                 <Pivot Title="Library" Margin="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}">
                     <PivotItem Header="Bookmarks">
@@ -52,12 +51,12 @@
         
         <Grid x:Name="RootGrid" Background="Transparent" UseLayoutRounding="True">
             <Grid.Resources>
+                <!-- Edge Toolbar Button Style with 4px Corners -->
                 <Style x:Key="EdgeToolbarButtonStyle" TargetType="Button">
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="BorderThickness" Value="0"/>
                     <Setter Property="Width" Value="32"/>
                     <Setter Property="Height" Value="32"/>
-                    <!-- PHASE 1: 4px Corner Geometry for Buttons -->
                     <Setter Property="CornerRadius" Value="4"/>
                     <Setter Property="Template">
                         <Setter.Value>
@@ -100,12 +99,14 @@
                 </Style>
             </Grid.Resources>
 
+            <!-- Layout: TitleBar, Toolbar, WebViewHost -->
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/> 
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
+            <!-- ROW 0: Title Bar & Tab Strip -->
             <Grid Grid.Row="0" x:Name="AppTitleBar" Background="Transparent">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -129,20 +130,30 @@
                               ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                               ScrollViewer.VerticalScrollMode="Disabled"
                               Background="Transparent" Padding="4,0">
+                        
                         <ListView.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <ItemsStackPanel Orientation="Horizontal"/>
                             </ItemsPanelTemplate>
                         </ListView.ItemsPanel>
+
+                        <!-- ✅ SILKY TRANSITIONS: 150ms Cubic-Bezier & Staggering -->
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0"/>
                                 <Setter Property="Margin" Value="0"/>
-                                <Setter Property="MinWidth" Value="72"/>
-                                <Setter Property="MaxWidth" Value="240"/>
+                                <Setter Property="MinWidth" Value="0"/>
                                 <Setter Property="MinHeight" Value="0"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                                 <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Transitions">
+                                    <Setter.Value>
+                                        <TransitionCollection>
+                                            <RepositionThemeTransition IsStaggeringEnabled="True"/>
+                                            <EntranceThemeTransition IsStaggeringEnabled="True" FromHorizontalOffset="20"/>
+                                        </TransitionCollection>
+                                    </Setter.Value>
+                                </Setter>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
@@ -152,6 +163,7 @@
                                 </Setter>
                             </Style>
                         </ListView.ItemContainerStyle>
+
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:TabViewModel">
                                 <controls:TabItemPresenter 
@@ -172,7 +184,7 @@
                 </Grid>
             </Grid>
 
-            <!-- PHASE 1: Layer 1 Canvas & 1px Bottom Micro-border -->
+            <!-- ROW 1: Toolbar & Omnibox -->
             <Border Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="8,4">
                 <Grid ColumnSpacing="4">
                     <Grid.ColumnDefinitions>
@@ -198,23 +210,40 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- PHASE 1: 16px Corner Geometry for Omnibox Container -->
-                    <Border x:Name="OmniboxBorder" Grid.Column="2" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="16" Height="32" VerticalAlignment="Center" BorderThickness="1" BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
-                        <Grid Padding="12,0">
+                    <!-- ✅ REFINED OMNIBOX: 28px Height, 6px Radius, Transparent by Default -->
+                    <Border x:Name="OmniboxBorder" Grid.Column="2" 
+                            Background="Transparent" 
+                            CornerRadius="6" 
+                            Height="28" 
+                            VerticalAlignment="Center" 
+                            BorderThickness="0" 
+                            BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
+                        <Grid Padding="8,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             
-                            <FontIcon x:Name="OmniboxIcon" Grid.Column="0" Glyph="&#xE721;" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <FontIcon x:Name="OmniboxIcon" Grid.Column="0" 
+                                      Glyph="&#xE721;" 
+                                      FontSize="13" 
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                      VerticalAlignment="Center" 
+                                      Margin="0,0,6,0"/>
                             
                             <TextBox x:Name="Omnibox" Grid.Column="1"
                                      automation:AutomationProperties.AutomationId="Omnibox"
                                      Text="{x:Bind ViewModel.OmniboxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                      PlaceholderText="Search Google or type a URL"
                                      KeyDown="Omnibox_KeyDown"
-                                     Background="Transparent" Foreground="{ThemeResource TextFillColorPrimaryBrush}" BorderThickness="0"
-                                     VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0" FontSize="14"/>
+                                     Background="Transparent" 
+                                     Foreground="{ThemeResource TextFillColorPrimaryBrush}" 
+                                     BorderThickness="0"
+                                     VerticalAlignment="Center" 
+                                     VerticalContentAlignment="Center" 
+                                     Padding="4,0" 
+                                     FontSize="13"
+                                     Margin="0,0,0,-1"/>
                         </Grid>
                     </Border>
 
@@ -233,7 +262,6 @@
                                     <Flyout.SystemBackdrop>
                                         <DesktopAcrylicBackdrop/>
                                     </Flyout.SystemBackdrop>
-                                    <!-- PHASE 1: Layer 2 Card Background for Flyouts -->
                                     <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12">
                                         <Grid Width="350" MaxHeight="400">
                                             <Grid.RowDefinitions>
@@ -281,31 +309,42 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Row="2" x:Name="WebViewHost" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+            <!-- ROW 2: Flexible Tiling Host -->
+            <!-- Default State: Single Column/Row -->
+            <Grid Grid.Row="2" x:Name="TilingHost" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" x:Name="LeftPaneColumn"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="0" x:Name="RightPaneColumn"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <WebView2 x:Name="MainWebView" Grid.Column="0" DefaultBackgroundColor="Transparent"/>
+                <!-- Primary WebView -->
+                <WebView2 x:Name="MainWebView" Grid.Row="0" Grid.Column="0" DefaultBackgroundColor="Transparent"/>
 
-                <primitives:Thumb x:Name="PaneDivider" Grid.Column="1" Width="4" Background="{ThemeResource DividerStrokeColorDefaultBrush}" Visibility="Collapsed" DragDelta="PaneDivider_DragDelta"/>
+                <!-- Secondary WebView (Hidden until tiled) -->
+                <WebView2 x:Name="SecondaryWebView" Visibility="Collapsed" DefaultBackgroundColor="Transparent"/>
 
-                <Grid Grid.Column="2" x:Name="RightPaneHost" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="32"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    
-                    <Border Grid.Row="0" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
-                        <Button Click="CollapsePane_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="4" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Close Split">
-                            <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                <!-- Adaptive Divider -->
+                <primitives:Thumb x:Name="TilingDivider" Visibility="Collapsed" DragDelta="TilingDivider_DragDelta" Background="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+
+                <!-- Layout Switcher Header (Appears when tiled) -->
+                <Border x:Name="TilingHeader" Visibility="Collapsed" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="8" Padding="4" CornerRadius="6" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <Button Click="SwitchToHorizontal_Click" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Horizontal">
+                            <FontIcon Glyph="&#xE8A5;" FontSize="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </Button>
-                    </Border>
-
-                    <WebView2 x:Name="SecondaryWebView" Grid.Row="1" DefaultBackgroundColor="Transparent"/>
-                </Grid>
+                        <Button Click="SwitchToVertical_Click" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Vertical">
+                            <FontIcon Glyph="&#xE8A6;" FontSize="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                        </Button>
+                        <Button Click="SwitchToGrid_Click" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Grid">
+                            <FontIcon Glyph="&#xE8A7;" FontSize="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                        </Button>
+                        <Button Click="Untile_Click" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Untile">
+                            <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Grid>
     </SplitView>
