@@ -12,7 +12,6 @@ public sealed partial class MainWindow
     private TabViewModel? _primaryTab;
     private TabViewModel? _secondaryTab;
 
-    // Wire up ViewModel tiling events in constructor or SetupEventHooks
     private void SetupTilingEngine()
     {
         ViewModel.TilingLayoutChanged += ApplyTilingLayout;
@@ -98,8 +97,8 @@ public sealed partial class MainWindow
         TilingHost.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         Grid.SetRow(MainWebView, 0); Grid.SetColumn(MainWebView, 0);
-        Grid.SetRow(SecondaryWebView, 1); Grid.SetColumn(SecondaryWebView, 1); // Diagonal grid for better visibility
-        TilingDivider.Visibility = Visibility.Collapsed; // Grid uses natural star sizing; divider hidden for simplicity
+        Grid.SetRow(SecondaryWebView, 1); Grid.SetColumn(SecondaryWebView, 1);
+        TilingDivider.Visibility = Visibility.Collapsed;
     }
 
     private void ResetGridToSingle()
@@ -157,9 +156,68 @@ public sealed partial class MainWindow
     private void UpdateTabTitle(TabViewModel? tab, WebView2 wv) => tab?.Title = wv.CoreWebView2.DocumentTitle;
     private void UpdateTabUrl(TabViewModel? tab, string url) => tab?.Url = url;
 
-    // Header Button Handlers
     private void SwitchToHorizontal_Click(object sender, RoutedEventArgs e) => ViewModel.SwitchTilingLayoutCommand.Execute(TilingLayout.Horizontal);
     private void SwitchToVertical_Click(object sender, RoutedEventArgs e) => ViewModel.SwitchTilingLayoutCommand.Execute(TilingLayout.Vertical);
     private void SwitchToGrid_Click(object sender, RoutedEventArgs e) => ViewModel.SwitchTilingLayoutCommand.Execute(TilingLayout.Grid);
     private void Untile_Click(object sender, RoutedEventArgs e) => ViewModel.UntileTabsCommand.Execute(null);
+
+    private void TileTabs(TabViewModel primary, TabViewModel secondary)
+    {
+        ViewModel.SelectedTab = primary;
+        _secondaryTab = secondary;
+        SplitPane(secondary.Url);
+    }
+
+    private async void SplitPane(string? url = null)
+    {
+        if (_isSplitPaneActive) return;
+        _isSplitPaneActive = true;
+
+        TilingHost.RowDefinitions.Clear();
+        TilingHost.ColumnDefinitions.Clear();
+        TilingHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        TilingHost.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        TilingHost.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        Grid.SetRow(MainWebView, 0); Grid.SetColumn(MainWebView, 0);
+        Grid.SetRow(SecondaryWebView, 0); Grid.SetColumn(SecondaryWebView, 1);
+        Grid.SetRow(TilingDivider, 0); Grid.SetColumn(TilingDivider, 1);
+        
+        TilingDivider.Visibility = Visibility.Visible;
+        SecondaryWebView.Visibility = Visibility.Visible;
+        TilingHeader.Visibility = Visibility.Visible;
+
+        try
+        {
+            await SecondaryWebView.EnsureCoreWebView2Async();
+            SecondaryWebView.CoreWebView2.Navigate(url ?? "https://www.tradingview.com");
+        }
+        catch (Exception ex) { /* LoggingService.Error("Secondary WebView Init Error", ex); */ }
+    }
+
+    private void CollapsePane()
+    {
+        if (!_isSplitPaneActive) return;
+        _isSplitPaneActive = false;
+        _secondaryTab = null;
+
+        ResetGridToSingle();
+        ViewModel.UntileTabsCommand.Execute(null);
+    }
+
+    private void CollapsePane_Click(object sender, RoutedEventArgs e) => CollapsePane();
+    
+    private void SplitPane_Click(object sender, RoutedEventArgs e) 
+    { 
+        if (TabListView.SelectedItems.Count >= 2)
+        {
+            var selected = TabListView.SelectedItems.Cast<TabViewModel>().ToList();
+            ViewModel.TileSelection(selected, TilingLayout.Horizontal);
+            TileTabs(selected[0], selected[1]);
+        }
+        else
+        {
+            SplitPane(); 
+        }
+    }
 }
