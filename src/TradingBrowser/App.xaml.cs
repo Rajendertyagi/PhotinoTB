@@ -1,30 +1,69 @@
 using Microsoft.UI.Xaml;
 using TradingBrowser.Services;
 using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace TradingBrowser;
 
 public partial class App : Application
 {
-    private Window? _window;
-    public static DatabaseService? Db { get; private set; }
+    public static SQLite.SQLiteConnection? Db { get; private set; }
+    private Window? m_window;
 
-    public App() => this.InitializeComponent();
+    public App()
+    {
+        this.InitializeComponent();
+        
+        // GLOBAL EXCEPTION HOOKS
+        this.UnhandledException += App_UnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+    }
 
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         try
         {
-            LoggingService.Log("App startup initiated.");
-            Db = new DatabaseService();
+            LoggingService.Info("App startup initiated.");
+
+            // --- YOUR EXISTING DB INITIALIZATION ---
+            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TradingBrowser");
+            if (!Directory.Exists(appDataPath)) Directory.CreateDirectory(appDataPath);
             
-            _window = new MainWindow();
-            _window.Activate();
+            string dbPath = Path.Combine(appDataPath, "data.db");
+            Db = new SQLite.SQLiteConnection(dbPath);
+            // Db.CreateTable<Models.HistoryItem>(); // Ensure your table creations are here
+            
+            LoggingService.Info("Database schema initialized successfully.");
+            // ---------------------------------------
+
+            m_window = new MainWindow();
+            m_window.Activate();
         }
         catch (Exception ex)
         {
             LoggingService.Error("Fatal error during app startup", ex);
-            throw;
         }
+    }
+
+    private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+    {
+        LoggingService.Error("UI Thread Unhandled Exception", e.Exception);
+        e.Handled = true; // Prevents hard crash, logs the error
+    }
+
+    private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        if (e.ExceptionObject is Exception ex)
+        {
+            LoggingService.Error("AppDomain Fatal Exception", ex);
+        }
+    }
+
+    private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        LoggingService.Error("Unobserved Background Task Exception", e.Exception);
+        e.SetObserved(); // Prevents hard crash
     }
 }
