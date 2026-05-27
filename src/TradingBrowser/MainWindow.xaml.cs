@@ -75,19 +75,20 @@ public sealed partial class MainWindow : Window
         _ = InitializeWebViewAsync();
     }
 
-    // FIX: New method to restore last session
+    // FIX: Calls the correct LoadSession(out activeTabId) method
     private void RestoreLastSession()
     {
         try
         {
             LoggingService.Info("[Session] Attempting to restore last session...");
-            var restoredTabs = _sessionService.GetLastSession();
-            string activeTabId = _sessionService.GetLastActiveTabId();
+            
+            string? activeTabId;
+            var restoredTabs = _sessionService.LoadSession(out activeTabId);
             
             if (restoredTabs != null && restoredTabs.Count > 0)
             {
                 ViewModel.InitializeSession(restoredTabs, activeTabId);
-                LoggingService.Info($"[Session] Restored {restoredTabs.Count} tabs. Active: {activeTabId}");
+                LoggingService.Info($"[Session] Restored {restoredTabs.Count} tabs. Active: {activeTabId ?? "none"}");
             }
             else
             {
