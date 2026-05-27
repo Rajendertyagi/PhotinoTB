@@ -9,6 +9,38 @@ namespace TradingBrowser;
 
 public sealed partial class MainWindow
 {
+    private void RootGrid_ActualThemeChanged(FrameworkElement sender, object args)
+    {
+        RefreshThemeBrushes();
+    }
+
+    private void RefreshThemeBrushes()
+    {
+        if (Omnibox.FocusState != FocusState.Unfocused)
+        {
+            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"];
+        }
+        else
+        {
+            OmniboxBorder.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        }
+    }
+
+    private void SetupOmniboxAnimations()
+    {
+        Omnibox.GotFocus += (s, e) => {
+            OmniboxBorder.Background = (Brush)Application.Current.Resources["LayerFillColorDefaultBrush"];
+            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"];
+            OmniboxBorder.BorderThickness = new Thickness(1);
+        };
+        
+        Omnibox.LostFocus += (s, e) => {
+            OmniboxBorder.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            OmniboxBorder.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            OmniboxBorder.BorderThickness = new Thickness(0);
+        };
+    }
+
     private void UpdateOmniboxIcon()
     {
         string url = ViewModel.OmniboxText ?? "";
@@ -16,36 +48,6 @@ public sealed partial class MainWindow
         bool isNewTab = string.IsNullOrWhiteSpace(url) || url == "https://www.google.com";
         
         OmniboxIcon.Glyph = (isHttps && !isNewTab) ? "\uE72E" : "\uE721";
-    }
-
-    private void SetupOmniboxAnimations()
-    {
-        Omnibox.GotFocus += (s, e) => {
-            OmniboxBorder.Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseBrush"];
-            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"];
-            OmniboxBorder.BorderThickness = new Thickness(1.5);
-        };
-        
-        Omnibox.LostFocus += (s, e) => {
-            // Revert to the default Phase 1 micro-border state
-            OmniboxBorder.Background = (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"];
-            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"];
-            OmniboxBorder.BorderThickness = new Thickness(1);
-        };
-    }
-
-    // PHASE 1: Live Theme Refresh
-    private void RefreshThemeBrushes()
-    {
-        // If the Omnibox is currently focused when the theme changes, update its active border
-        if (Omnibox.FocusState != FocusState.Unfocused)
-        {
-            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"];
-        }
-        else
-        {
-            OmniboxBorder.BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"];
-        }
     }
 
     private void Omnibox_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -74,8 +76,6 @@ public sealed partial class MainWindow
         await dialog.ShowAsync();
     }
     
-    private void Downloads_Click(object sender, RoutedEventArgs e) { if (_isWebViewInitialized) MainWebView.CoreWebView2.Navigate("about:downloads"); }
-
     private void ToggleFullscreen()
     {
         var presenter = this.AppWindow.Presenter as OverlappedPresenter;
