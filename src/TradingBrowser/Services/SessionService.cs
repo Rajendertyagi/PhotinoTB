@@ -37,29 +37,43 @@ public class SessionService
         transaction.Commit();
     }
 
+    // FIX: Method signature matches what MainWindow expects
     public List<TabViewModel> LoadSession(out string? activeTabId)
     {
         activeTabId = null;
         var tabs = new List<TabViewModel>();
-        using var conn = _db.GetConnection();
-        conn.Open();
-
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT TabId, Url, Title, IsActive FROM Sessions ORDER BY Position ASC;";
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
+        
+        try
         {
-            var tab = new TabViewModel
-            {
-                Url = reader.GetString(1),
-                Title = reader.GetString(2)
-            };
-            // Use reflection or a specific constructor to set Id if needed, 
-            // but for restore, generating a new Guid is usually safer to avoid state collisions.
-            tabs.Add(tab);
+            using var conn = _db.GetConnection();
+            conn.Open();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT TabId, Url, Title, IsActive FROM Sessions ORDER BY Position ASC;";
+            using var reader = cmd.ExecuteReader();
             
-            if (reader.GetBoolean(3)) activeTabId = tab.Id.ToString();
+            while (reader.Read())
+            {
+                string tabId = reader.GetString(0);
+                var tab = new TabViewModel
+                {
+                    // FIX: Properly restore the Id so active tab matching works
+                    Id = System.Guid.Parse(tabId),
+                    Url = reader.GetString(1),
+                    Title = reader.GetString(2)
+                };
+                tabs.Add(tab);
+                
+                if (reader.GetBoolean(3)) 
+                    activeTabId = tabId;
+            }
+            LoggingService.Info($"[Session] Loaded {tabs.Count} tabs from database");
         }
+        catch (System.Exception ex)
+        {
+            LoggingService.Error("[Session] LoadSession failed", ex);
+        }
+        
         return tabs;
     }
 }
