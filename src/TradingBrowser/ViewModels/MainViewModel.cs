@@ -15,9 +15,16 @@ public enum TilingLayout { None, Horizontal, Vertical, Grid }
 public partial class MainViewModel : ObservableObject
 {
     [ObservableProperty] private TabViewModel? _selectedTab;
-    [ObservableProperty] private string _omniboxText = string.Empty;
     
-    // ✅ FIX: Manual implementation to avoid CS0111 source generator conflict
+    // ✅ FIX: Manual implementation to avoid CS0111 generator conflict
+    private string _omniboxText = string.Empty;
+    public string OmniboxText
+    {
+        get => _omniboxText;
+        set => SetProperty(ref _omniboxText, value);
+    }
+    
+    // ✅ FIX: Manual implementation to avoid CS0111 generator conflict
     private bool _canGoBack;
     public bool CanGoBack
     {
