@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.Web.WebView2.Core;
 using TradingBrowser.ViewModels;
@@ -88,9 +87,6 @@ public sealed partial class MainWindow : Window
         RootGrid.PointerPressed += (s, e) => _shortcutService.HandlePointerPressed(e);
         RootGrid.KeyDown += (s, e) => _shortcutService.HandleUiKeyDown(e);
         
-        // ✅ GLOBAL UI INTERCEPTOR: Catches EVERY button click, even silent ones
-        RootGrid.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(GlobalClickInterceptor), true);
-
         ViewModel.NavigationRequested += url => { if (_isWebViewInitialized) MainWebView.CoreWebView2.Navigate(url); };
         ViewModel.FocusOmniboxRequested += () => { Omnibox.Focus(FocusState.Programmatic); Omnibox.SelectAll(); };
         ViewModel.ToggleFullscreenRequested += ToggleFullscreen;
@@ -100,28 +96,5 @@ public sealed partial class MainWindow : Window
             if (ViewModel.SelectedTab != null)
                 _sessionService.SaveSession(ViewModel.Tabs, ViewModel.SelectedTab.Id.ToString());
         };
-    }
-
-    // ✅ INTERCEPTOR METHOD: Logs the name of every clicked button
-    private void GlobalClickInterceptor(object sender, RoutedEventArgs e)
-    {
-        if (e.OriginalSource is FrameworkElement element)
-        {
-            // Walk up the tree to find the Button
-            var current = element;
-            while (current != null)
-            {
-                if (current is Button btn)
-                {
-                    string btnName = !string.IsNullOrEmpty(btn.Name) ? btn.Name : 
-                                     !string.IsNullOrEmpty(btn.Tag?.ToString()) ? btn.Tag.ToString() : 
-                                     (btn.Content is FontIcon fi ? $"Icon_{fi.Glyph}" : "UnnamedButton");
-                    
-                    LoggingService.Info($"[UI INTERCEPTOR] Button Clicked: {btnName}");
-                    break;
-                }
-                current = current.Parent as FrameworkElement;
-            }
-        }
     }
 }
