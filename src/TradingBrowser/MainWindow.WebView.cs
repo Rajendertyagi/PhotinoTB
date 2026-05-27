@@ -14,12 +14,10 @@ public sealed partial class MainWindow
         LoggingService.Info("InitializeWebViewAsync: Starting...");
         try
         {
-            var env = await CoreWebView2Environment.CreateAsync(null, System.IO.Path.Combine(AppContext.BaseDirectory, "EBWebView"));
-            LoggingService.Info($"WebView2 Environment created. Runtime: {env.BrowserVersionString}");
-
-            await MainWebView.EnsureCoreWebView2Async(env);
+            // FIX 1: Bypassed CreateAsync overload issues by using the default environment
+            await MainWebView.EnsureCoreWebView2Async();
             _isWebViewInitialized = true;
-            LoggingService.Info("InitializeWebViewAsync: SUCCESS. CoreWebView2 ready.");
+            LoggingService.Info($"InitializeWebViewAsync: SUCCESS. CoreWebView2 ready. Runtime: {MainWebView.CoreWebView2.Environment.BrowserVersionString}");
 
             // --- WEBVIEW2 TELEMETRY HOOKS ---
             MainWebView.CoreWebView2.DocumentTitleChanged += (s, e) =>
@@ -37,13 +35,15 @@ public sealed partial class MainWindow
 
             MainWebView.CoreWebView2.NavigationCompleted += (s, e) =>
             {
+                // FIX 2: Read the URL from the WebView Source, since 'e' does not contain 'Uri'
+                string currentUri = MainWebView.CoreWebView2.Source;
                 if (e.IsSuccess)
                 {
-                    LoggingService.Info($"[WebView] NavigationCompleted SUCCESS -> {e.Uri}");
+                    LoggingService.Info($"[WebView] NavigationCompleted SUCCESS -> {currentUri}");
                 }
                 else
                 {
-                    LoggingService.Error($"[WebView] NavigationCompleted FAILED -> {e.Uri} | Kind: {e.WebErrorStatus}");
+                    LoggingService.Error($"[WebView] NavigationCompleted FAILED -> {currentUri} | Error: {e.WebErrorStatus}");
                 }
             };
 
@@ -66,7 +66,7 @@ public sealed partial class MainWindow
                     window.chrome.webview.postMessage('PROMISE_ERROR: ' + e.reason);
                 });
             ";
-            MainWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(jsErrorCatcher);
+            await MainWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(jsErrorCatcher);
             LoggingService.Info("[WebView] JS error catcher injected.");
 
             MainWebView.CoreWebView2.Navigate("https://www.google.com");
