@@ -16,7 +16,6 @@ public sealed partial class MainWindow : Window
     public MainViewModel ViewModel { get; } = new();
     public DownloadService DownloadManager => _downloadService; 
 
-    // These are private but accessible across all partial classes (Tabs, Panes, Navigation, WebView)
     private bool _isWebViewInitialized;
     private bool _isSplitPaneActive;
     
@@ -66,16 +65,40 @@ public sealed partial class MainWindow : Window
         SetupEventHooks();
         SetupOmniboxAnimations(); 
         
-        // PHASE 1: Live Theme Hook (Lives in Navigation.cs)
         RootGrid.ActualThemeChanged += RootGrid_ActualThemeChanged;
-
-        // SILKY MOTION: Setup Adaptive Tab Scaling (Lives in Tabs.cs)
         SetupAdaptiveTabScaling();
-
-        // VIVALDI TILING: Setup Tiling Engine (Lives in Panes.cs)
         SetupTilingEngine();
 
         _ = InitializeWebViewAsync();
+    }
+
+    private async Task InitializeWebViewAsync()
+    {
+        try
+        {
+            await MainWebView.EnsureCoreWebView2Async();
+            _isWebViewInitialized = true;
+            
+            // Subscribe to events
+            MainWebView.CoreWebView2.DocumentTitleChanged += (s, e) => 
+            {
+                if (ViewModel.SelectedTab != null)
+                    ViewModel.SelectedTab.Title = MainWebView.CoreWebView2.DocumentTitle;
+            };
+            
+            MainWebView.CoreWebView2.NavigationStarting += (s, e) => 
+            {
+                if (ViewModel.SelectedTab != null)
+                    ViewModel.SelectedTab.Url = e.Uri;
+            };
+
+            // Navigate to default page
+            MainWebView.CoreWebView2.Navigate("https://www.google.com");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"WebView2 init failed: {ex.Message}");
+        }
     }
 
     private void SetupTitleBar()
