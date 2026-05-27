@@ -98,7 +98,7 @@
                 </Style>
             </Grid.Resources>
 
-            <!-- ROW 0: Tab Strip - Increased to 40px with visible background -->
+            <!-- ROW 0: Tab Strip - Visible background & proper height -->
             <Grid Grid.Row="0" x:Name="AppTitleBar" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -182,7 +182,7 @@
                 </Grid>
             </Grid>
 
-            <!-- ROW 1: Toolbar & Omnibox - Fixed alignment and spacing -->
+            <!-- ROW 1: Toolbar & Omnibox - Fixed alignment, spacing, contrast -->
             <Border Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="8,6">
                 <Grid ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
@@ -208,7 +208,7 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- ✅ FIXED OMNIBOX: Perfect alignment, spacing, and contrast -->
+                    <!-- ✅ FIXED OMNIBOX: Removed invalid TextTrimming, added proper spacing & contrast -->
                     <Border x:Name="OmniboxBorder" Grid.Column="2" 
                             Background="{ThemeResource ControlFillColorDefaultBrush}" 
                             CornerRadius="6" 
@@ -242,9 +242,7 @@
                                      VerticalContentAlignment="Center" 
                                      Padding="0,2,0,0" 
                                      FontSize="14"
-                                     FontFamily="Segoe UI Variable"
-                                     TextWrapping="NoWrap"
-                                     TextTrimming="CharacterEllipsis"/>
+                                     FontFamily="Segoe UI Variable"/>
                         </Grid>
                     </Border>
 
