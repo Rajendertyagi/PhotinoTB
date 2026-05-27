@@ -21,6 +21,9 @@ public static class LoggingService
         _logFilePath = Path.Combine(logDir, $"tradingbrowser_{DateTime.Now:yyyy-MM-dd}.log");
     }
 
+    // FIX: Added Log() as an alias for Info() to fix CS0117 in MainWindow.WebView.cs
+    public static void Log(string message) => WriteLog("INFO", message);
+    
     public static void Info(string message) => WriteLog("INFO", message);
     public static void Warning(string message) => WriteLog("WARN", message);
     
