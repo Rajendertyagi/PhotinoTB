@@ -11,21 +11,15 @@ public static class LoggingService
 
     static LoggingService()
     {
-        string logDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "TradingBrowser",
-            "logs"
-        );
+        // FIX: Changed to AppContext.BaseDirectory (the folder where the .exe is located)
+        string logDir = Path.Combine(AppContext.BaseDirectory, "logs");
         
         if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
         _logFilePath = Path.Combine(logDir, $"tradingbrowser_{DateTime.Now:yyyy-MM-dd}.log");
     }
 
     public static void Log(string message) => WriteLog("INFO", message);
-    
-    // FIX: Added (string, string) overload to match MainWindow.WebView.cs calls
     public static void Log(string message, string details) => WriteLog("INFO", $"{message} | {details}");
-    
     public static void Log(string message, Exception ex) => WriteLog("ERROR", $"{message} {ex}");
     
     public static void Info(string message) => WriteLog("INFO", message);
