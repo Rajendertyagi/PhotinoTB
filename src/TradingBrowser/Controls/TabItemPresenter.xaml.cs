@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Windows.Foundation; // FIX: Required for TypedEventHandler
 
 namespace TradingBrowser.Controls;
 
@@ -24,6 +25,7 @@ public sealed partial class TabItemPresenter : UserControl
         set => SetValue(IsActiveProperty, value);
     }
 
+    // FIX: Use Windows.Foundation.TypedEventHandler
     public event TypedEventHandler<object, PointerRoutedEventArgs>? MiddleClicked;
     public event TypedEventHandler<object, RoutedEventArgs>? CloseClicked;
     public event TypedEventHandler<object, ContextRequestedEventArgs>? ContextRequested;
@@ -37,14 +39,7 @@ public sealed partial class TabItemPresenter : UserControl
     {
         if (d is TabItemPresenter presenter)
         {
-            if (presenter.IsActive)
-            {
-                VisualStateManager.GoToState(presenter, "Active", true);
-            }
-            else
-            {
-                VisualStateManager.GoToState(presenter, "Inactive", true);
-            }
+            VisualStateManager.GoToState(presenter, presenter.IsActive ? "Active" : "Inactive", true);
         }
     }
 
@@ -55,10 +50,7 @@ public sealed partial class TabItemPresenter : UserControl
 
     private void RootGrid_PointerExited(object sender, PointerRoutedEventArgs e)
     {
-        if (!IsActive)
-        {
-            CloseButton.Visibility = Visibility.Collapsed;
-        }
+        if (!IsActive) CloseButton.Visibility = Visibility.Collapsed;
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
