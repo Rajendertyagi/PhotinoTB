@@ -121,7 +121,6 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- ✅ FIX: Horizontal scrolling enabled for Edge-style tabs -->
                     <ListView x:Name="TabListView" Grid.Column="0"
                               automation:AutomationProperties.AutomationId="TabListView"
                               ItemsSource="{x:Bind ViewModel.Tabs, Mode=OneWay}" 
@@ -145,7 +144,9 @@
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0"/>
                                 <Setter Property="Margin" Value="0"/>
-                                <Setter Property="MinWidth" Value="72"/>
+                                <!-- ✅ FIX: Hardcode Edge-style fixed width -->
+                                <Setter Property="Width" Value="240"/>
+                                <Setter Property="MinWidth" Value="240"/>
                                 <Setter Property="MaxWidth" Value="240"/>
                                 <Setter Property="MinHeight" Value="40"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -167,10 +168,11 @@
 
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:TabViewModel">
+                                <!-- ✅ FIX: Event name updated to match ContextRequested -->
                                 <controls:TabItemPresenter 
                                     Title="{x:Bind Title, Mode=OneWay}"
                                     IsActive="{x:Bind IsActive, Mode=OneWay}"
-                                    TabRightTapped="Tab_ContextRequested"
+                                    TabContextRequested="Tab_ContextRequested"
                                     MiddleClicked="Tab_MiddleClicked"
                                     CloseClicked="Tab_CloseClicked"/>
                             </DataTemplate>
@@ -212,7 +214,6 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- ✅ FIX: Omnibox alignment and padding -->
                     <Border x:Name="OmniboxBorder" Grid.Column="2" 
                             Background="{ThemeResource ControlFillColorDefaultBrush}" 
                             CornerRadius="6" 
