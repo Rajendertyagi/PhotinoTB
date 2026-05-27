@@ -69,36 +69,8 @@ public sealed partial class MainWindow : Window
         SetupAdaptiveTabScaling();
         SetupTilingEngine();
 
-        _ = InitializeWebViewAsync();
-    }
-
-    private async Task InitializeWebViewAsync()
-    {
-        try
-        {
-            await MainWebView.EnsureCoreWebView2Async();
-            _isWebViewInitialized = true;
-            
-            // Subscribe to events
-            MainWebView.CoreWebView2.DocumentTitleChanged += (s, e) => 
-            {
-                if (ViewModel.SelectedTab != null)
-                    ViewModel.SelectedTab.Title = MainWebView.CoreWebView2.DocumentTitle;
-            };
-            
-            MainWebView.CoreWebView2.NavigationStarting += (s, e) => 
-            {
-                if (ViewModel.SelectedTab != null)
-                    ViewModel.SelectedTab.Url = e.Uri;
-            };
-
-            // Navigate to default page
-            MainWebView.CoreWebView2.Navigate("https://www.google.com");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"WebView2 init failed: {ex.Message}");
-        }
+        // This calls the method that lives in MainWindow.WebView.cs
+        _ = InitializeWebViewAsync(); 
     }
 
     private void SetupTitleBar()
