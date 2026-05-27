@@ -19,7 +19,7 @@
     <SplitView x:Name="MainSplitView" DisplayMode="Overlay" PaneBackground="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}" CompactPaneLength="0" OpenPaneLength="350">
         
         <SplitView.Pane>
-            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
+            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0" Background="{ThemeResource LayerFillColorDefaultBrush}">
                 <Pivot Title="Library" Margin="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}">
                     <PivotItem Header="Bookmarks">
                         <ListView x:Name="BookmarkListView" SelectionMode="Single" SelectionChanged="BookmarkListView_SelectionChanged">
@@ -49,7 +49,7 @@
             </Border>
         </SplitView.Pane>
         
-        <Grid x:Name="RootGrid" Background="Transparent" UseLayoutRounding="True">
+        <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" UseLayoutRounding="True">
             <Grid.Resources>
                 <Style x:Key="EdgeToolbarButtonStyle" TargetType="Button">
                     <Setter Property="Background" Value="Transparent"/>
@@ -98,19 +98,14 @@
                 </Style>
             </Grid.Resources>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="40"/> 
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <Grid Grid.Row="0" x:Name="AppTitleBar" Background="Transparent">
+            <!-- ROW 0: Tab Strip - Increased to 40px with visible background -->
+            <Grid Grid.Row="0" x:Name="AppTitleBar" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="138"/>
                 </Grid.ColumnDefinitions>
 
-                <Grid Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Stretch">
+                <Grid Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Stretch" MinHeight="40">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
@@ -126,7 +121,8 @@
                               ScrollViewer.HorizontalScrollMode="Auto" 
                               ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                               ScrollViewer.VerticalScrollMode="Disabled"
-                              Background="Transparent" Padding="4,0">
+                              Background="Transparent" Padding="4,0"
+                              MinHeight="40">
                         
                         <ListView.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -138,10 +134,14 @@
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0"/>
                                 <Setter Property="Margin" Value="0"/>
-                                <Setter Property="MinWidth" Value="0"/>
-                                <Setter Property="MinHeight" Value="0"/>
+                                <Setter Property="MinWidth" Value="72"/>
+                                <Setter Property="MaxWidth" Value="240"/>
+                                <Setter Property="MinHeight" Value="40"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                                 <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,0"/>
                                 <Setter Property="Transitions">
                                     <Setter.Value>
                                         <TransitionCollection>
@@ -153,7 +153,9 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
-                                            <ContentPresenter />
+                                            <Grid Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                                                <ContentPresenter />
+                                            </Grid>
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>
@@ -180,8 +182,9 @@
                 </Grid>
             </Grid>
 
-            <Border Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="8,4">
-                <Grid ColumnSpacing="4">
+            <!-- ROW 1: Toolbar & Omnibox - Fixed alignment and spacing -->
+            <Border Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="8,6">
+                <Grid ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="12"/>
@@ -190,7 +193,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                         <Button Click="Home_Click" Style="{StaticResource EdgeToolbarButtonStyle}" ToolTipService.ToolTip="Home">
                             <FontIcon Glyph="&#xE80F;" FontSize="14" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </Button>
@@ -205,39 +208,43 @@
                         </Button>
                     </StackPanel>
 
+                    <!-- ✅ FIXED OMNIBOX: Perfect alignment, spacing, and contrast -->
                     <Border x:Name="OmniboxBorder" Grid.Column="2" 
-                            Background="Transparent" 
+                            Background="{ThemeResource ControlFillColorDefaultBrush}" 
                             CornerRadius="6" 
-                            Height="28" 
+                            Height="32" 
                             VerticalAlignment="Center" 
-                            BorderThickness="0" 
+                            BorderThickness="1" 
                             BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
-                        <Grid Padding="8,0">
+                        <Grid Padding="10,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto" MinWidth="20"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             
                             <FontIcon x:Name="OmniboxIcon" Grid.Column="0" 
                                       Glyph="&#xE721;" 
-                                      FontSize="13" 
+                                      FontSize="14" 
                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
                                       VerticalAlignment="Center" 
-                                      Margin="0,0,6,0"/>
+                                      Margin="0,0,8,0"/>
                             
                             <TextBox x:Name="Omnibox" Grid.Column="1"
                                      automation:AutomationProperties.AutomationId="Omnibox"
                                      Text="{x:Bind ViewModel.OmniboxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                      PlaceholderText="Search Google or type a URL"
+                                     PlaceholderForeground="{ThemeResource TextFillColorTertiaryBrush}"
                                      KeyDown="Omnibox_KeyDown"
                                      Background="Transparent" 
                                      Foreground="{ThemeResource TextFillColorPrimaryBrush}" 
                                      BorderThickness="0"
                                      VerticalAlignment="Center" 
                                      VerticalContentAlignment="Center" 
-                                     Padding="4,0" 
-                                     FontSize="13"
-                                     Margin="0,0,0,-1"/>
+                                     Padding="0,2,0,0" 
+                                     FontSize="14"
+                                     FontFamily="Segoe UI Variable"
+                                     TextWrapping="NoWrap"
+                                     TextTrimming="CharacterEllipsis"/>
                         </Grid>
                     </Border>
 
@@ -312,16 +319,10 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Primary WebView -->
-                <WebView2 x:Name="MainWebView" Grid.Row="0" Grid.Column="0" DefaultBackgroundColor="Transparent"/>
-
-                <!-- Secondary WebView (Hidden until tiled) -->
-                <WebView2 x:Name="SecondaryWebView" Visibility="Collapsed" DefaultBackgroundColor="Transparent"/>
-
-                <!-- Adaptive Divider -->
+                <WebView2 x:Name="MainWebView" Grid.Row="0" Grid.Column="0" DefaultBackgroundColor="{ThemeResource SolidBackgroundFillColorBaseBrush}"/>
+                <WebView2 x:Name="SecondaryWebView" Visibility="Collapsed" DefaultBackgroundColor="{ThemeResource SolidBackgroundFillColorBaseBrush}"/>
                 <primitives:Thumb x:Name="TilingDivider" Visibility="Collapsed" DragDelta="TilingDivider_DragDelta" Background="{ThemeResource DividerStrokeColorDefaultBrush}"/>
 
-                <!-- Layout Switcher Header -->
                 <Border x:Name="TilingHeader" Visibility="Collapsed" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="8" Padding="4" CornerRadius="6" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
                     <StackPanel Orientation="Horizontal" Spacing="2">
                         <Button Click="SwitchToHorizontal_Click" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Horizontal">
