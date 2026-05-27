@@ -7,14 +7,24 @@
     mc:Ignorable="d"
     Height="36" Width="240">
 
-    <!-- ✅ FIX: Explicit events bypass ListView event swallowing and OS title bar interception -->
     <Grid x:Name="RootGrid" Background="Transparent" IsHitTestVisible="True"
           PointerEntered="RootGrid_PointerEntered"
-          PointerExited="RootGrid_PointerExited"
-          ContextRequested="RootGrid_ContextRequested">
+          PointerExited="RootGrid_PointerExited">
         
-        <!-- Background & Shoulders -->
-        <Rectangle x:Name="TabBackground" Fill="Transparent" Stroke="Transparent" StrokeThickness="1" RadiusX="8" RadiusY="8" Margin="0,4,0,0"/>
+        <!-- ✅ FIX: Native ContextFlyout forces the OS to yield the right-click and blocks the Move/Size menu -->
+        <Grid.ContextFlyout>
+            <MenuFlyout>
+                <MenuFlyoutItem Text="Close tab" Click="CloseTab_Click"/>
+                <MenuFlyoutItem Text="Close other tabs" Click="CloseOtherTabs_Click"/>
+            </MenuFlyout>
+        </Grid.ContextFlyout>
+
+        <!-- Inactive Background (Visible by default) -->
+        <Rectangle x:Name="InactiveBackground" Fill="Transparent" Stroke="Transparent" StrokeThickness="1" RadiusX="8" RadiusY="8" Margin="0,4,0,0" Visibility="Visible"/>
+        
+        <!-- Active Background (Hidden by default, uses ThemeResource so it updates with Light/Dark mode) -->
+        <Rectangle x:Name="ActiveBackground" Fill="{ThemeResource LayerFillColorDefaultBrush}" Stroke="{ThemeResource CardStrokeColorDefaultBrush}" StrokeThickness="1" RadiusX="8" RadiusY="8" Margin="0,4,0,0" Visibility="Collapsed"/>
+        
         <!-- Bottom Cover: Hides toolbar border when active -->
         <Rectangle x:Name="BottomCover" Fill="{ThemeResource LayerFillColorDefaultBrush}" Height="2" VerticalAlignment="Bottom" Visibility="Collapsed" Margin="0,0,0,-2"/>
 
