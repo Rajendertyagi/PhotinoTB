@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Windows.Foundation;
+using System;
 
 namespace TradingBrowser.Controls;
 
@@ -25,41 +25,25 @@ public sealed partial class TabItemPresenter : UserControl
         set => SetValue(IsActiveProperty, value);
     }
 
-    public event TypedEventHandler<object, PointerRoutedEventArgs>? MiddleClicked;
-    public event TypedEventHandler<object, RoutedEventArgs>? CloseClicked;
-    public event TypedEventHandler<object, RightTappedRoutedEventArgs>? TabRightTapped;
+    // ✅ FIX: Standard EventHandler instead of TypedEventHandler
+    public event EventHandler<PointerRoutedEventArgs>? MiddleClicked;
+    public event EventHandler<RoutedEventArgs>? CloseClicked;
+    public event EventHandler<RightTappedRoutedEventArgs>? TabRightTapped; 
 
-    public TabItemPresenter()
-    {
-        this.InitializeComponent();
-    }
+    public TabItemPresenter() => this.InitializeComponent();
 
     private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is TabItemPresenter presenter)
         {
-            string state = presenter.IsActive ? "Active" : "Inactive";
-            VisualStateManager.GoToState(presenter, state, false);
-            
-            // Ensure close button matches active state
+            VisualStateManager.GoToState(presenter, presenter.IsActive ? "Active" : "Inactive", false);
             presenter.CloseButton.Visibility = presenter.IsActive ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
-    private void RootGrid_PointerEntered(object sender, PointerRoutedEventArgs e)
-    {
-        CloseButton.Visibility = Visibility.Visible;
-    }
-
-    private void RootGrid_PointerExited(object sender, PointerRoutedEventArgs e)
-    {
-        if (!IsActive) CloseButton.Visibility = Visibility.Collapsed;
-    }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        CloseClicked?.Invoke(this, e);
-    }
+    private void RootGrid_PointerEntered(object sender, PointerRoutedEventArgs e) => CloseButton.Visibility = Visibility.Visible;
+    private void RootGrid_PointerExited(object sender, PointerRoutedEventArgs e) { if (!IsActive) CloseButton.Visibility = Visibility.Collapsed; }
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => CloseClicked?.Invoke(this, e);
 
     protected override void OnPointerPressed(PointerRoutedEventArgs e)
     {
@@ -74,6 +58,6 @@ public sealed partial class TabItemPresenter : UserControl
     private void RootGrid_RightTapped(object sender, RightTappedRoutedEventArgs e)
     {
         TabRightTapped?.Invoke(this, e);
-        e.Handled = true; // Prevents Windows system menu
+        e.Handled = true;
     }
 }
