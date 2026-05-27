@@ -18,7 +18,11 @@ public sealed partial class MainWindow
     public void SetupAdaptiveTabScaling()
     {
         TabListView.SizeChanged += (_, _) => RecalculateTabWidths();
-        ViewModel.Tabs.CollectionChanged += (_, _) => RecalculateTabWidths();
+        ViewModel.Tabs.CollectionChanged += (_, e) =>
+        {
+            LoggingService.Info($"[Tabs] Collection changed. Action: {e.Action}. Count: {ViewModel.Tabs.Count}");
+            RecalculateTabWidths();
+        };
     }
 
     private void RecalculateTabWidths()
@@ -43,7 +47,7 @@ public sealed partial class MainWindow
 
     private void TabListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        LoggingService.Info($"TabListView_SelectionChanged fired. WebViewInitialized: {_isWebViewInitialized}, SelectedTab: {ViewModel.SelectedTab?.Title ?? "null"}");
+        LoggingService.Info($"[Tabs] SelectionChanged fired. WebViewInit: {_isWebViewInitialized}. Selected: {ViewModel.SelectedTab?.Title ?? "null"}");
 
         foreach (var item in TabListView.Items)
         {
@@ -56,30 +60,36 @@ public sealed partial class MainWindow
             }
         }
 
-        if (!_isWebViewInitialized || ViewModel.SelectedTab == null) 
+        if (!_isWebViewInitialized || ViewModel.SelectedTab == null)
         {
-            LoggingService.Warning("TabListView_SelectionChanged ABORTED: WebView not initialized or no tab selected.");
-            return; 
+            LoggingService.Warning("[Tabs] SelectionChanged ABORTED: WebView not initialized or no tab selected.");
+            return;
         }
         if (TabListView.SelectedItems.Count > 1) return;
 
-        if (e.RemovedItems.Count > 0 && e.RemovedItems[0] is TabViewModel oldTab) oldTab.Url = MainWebView.CoreWebView2.Source;
-        
+        if (e.RemovedItems.Count > 0 && e.RemovedItems[0] is TabViewModel oldTab)
+        {
+            LoggingService.Info($"[Tabs] Switched AWAY from: {oldTab.Title} ({oldTab.Url})");
+            oldTab.Url = MainWebView.CoreWebView2.Source;
+        }
+
         var newTab = ViewModel.SelectedTab;
         ViewModel.OmniboxText = newTab.Url;
-        
+        LoggingService.Info($"[Tabs] Switched TO: {newTab.Title} ({newTab.Url})");
+
         if (MainWebView.CoreWebView2.Source != newTab.Url) MainWebView.CoreWebView2.Navigate(newTab.Url);
         UpdateOmniboxIcon();
-        
+
         bool isBookmarked = _hbService.IsBookmarked(newTab.Url);
         BookmarkIcon.Glyph = isBookmarked ? "\uE735" : "\uE734";
     }
 
     private void Tab_ContextRequested(object sender, ContextRequestedEventArgs e)
     {
+        LoggingService.Info("[Tabs] Context menu requested.");
         var selectedTabs = TabListView.SelectedItems.Cast<TabViewModel>().ToList();
         TabItemPresenter? tabPresenter = sender as TabItemPresenter;
-        
+
         if (tabPresenter?.DataContext is TabViewModel tabVM)
         {
             if (!selectedTabs.Contains(tabVM)) selectedTabs = new List<TabViewModel> { tabVM };
@@ -91,7 +101,7 @@ public sealed partial class MainWindow
         menu.Items.Add(closeItem);
 
         var closeOtherItem = new MenuFlyoutItem { Text = "Close other tabs" };
-        closeOtherItem.Click += (s, args) => 
+        closeOtherItem.Click += (s, args) =>
         {
             foreach (var t in ViewModel.Tabs.Where(t => !selectedTabs.Contains(t))) ViewModel.CloseTabCommand.Execute(t);
         };
@@ -100,7 +110,7 @@ public sealed partial class MainWindow
         if (selectedTabs.Count >= 2)
         {
             var tileItem = new MenuFlyoutItem { Text = $"Tile {selectedTabs.Count} Tabs" };
-            tileItem.Click += (s, args) => 
+            tileItem.Click += (s, args) =>
             {
                 ViewModel.TileSelection(selectedTabs, TilingLayout.Horizontal);
                 TileTabs(selectedTabs[0], selectedTabs[1]);
@@ -115,19 +125,27 @@ public sealed partial class MainWindow
         e.Handled = true;
     }
 
-    private void Tab_MiddleClicked(object sender, PointerRoutedEventArgs e) 
-    { 
-        if (sender is FrameworkElement el && el.DataContext is TabViewModel tab) ViewModel.CloseTabCommand.Execute(tab); 
-    }
-    
-    private void Tab_CloseClicked(object sender, RoutedEventArgs e) 
-    { 
-        if (sender is FrameworkElement el && el.DataContext is TabViewModel tab) ViewModel.CloseTabCommand.Execute(tab); 
+    private void Tab_MiddleClicked(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement el && el.DataContext is TabViewModel tab)
+        {
+            LoggingService.Info($"[Tabs] Middle-click close on: {tab.Title}");
+            ViewModel.CloseTabCommand.Execute(tab);
+        }
     }
 
-    private void NewTab_Click(object sender, RoutedEventArgs e) 
-    { 
-        LoggingService.Info("NewTab_Click: Button pressed. Executing AddTabCommand...");
-        ViewModel.AddTabCommand.Execute(null); 
+    private void Tab_CloseClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement el && el.DataContext is TabViewModel tab)
+        {
+            LoggingService.Info($"[Tabs] Close button clicked on: {tab.Title}");
+            ViewModel.CloseTabCommand.Execute(tab);
+        }
+    }
+
+    private void NewTab_Click(object sender, RoutedEventArgs e)
+    {
+        LoggingService.Info("[Tabs] NewTab button clicked. Executing AddTabCommand...");
+        ViewModel.AddTabCommand.Execute(null);
     }
 }
