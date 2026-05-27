@@ -7,7 +7,11 @@
     mc:Ignorable="d"
     Height="40" MinWidth="72" MaxWidth="240">
 
-    <Grid x:Name="RootGrid" Background="Transparent" Margin="0,4,0,-1"> <!-- -1 bottom margin melts into toolbar -->
+    <Grid x:Name="RootGrid" Background="Transparent" Margin="0,4,0,-1" 
+          ContextRequested="RootGrid_ContextRequested"
+          PointerEntered="RootGrid_PointerEntered"
+          PointerExited="RootGrid_PointerExited">
+        
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="ActiveStates">
                 <VisualState x:Name="Inactive"/>
@@ -15,17 +19,14 @@
                     <VisualState.Setters>
                         <Setter Target="TabBackground.Fill" Value="{ThemeResource LayerFillColorDefaultBrush}"/>
                         <Setter Target="TabBackground.Stroke" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
-                        <Setter Target="TabBackground.CornerRadius" Value="8,8,0,0"/> <!-- Shoulders -->
-                        <Setter Target="BottomCover.Visibility" Value="Visible"/> <!-- Hides toolbar border -->
+                        <Setter Target="TabBackground.CornerRadius" Value="8,8,0,0"/>
+                        <Setter Target="BottomCover.Visibility" Value="Visible"/>
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
 
-        <!-- Tab Body -->
         <Rectangle x:Name="TabBackground" Fill="Transparent" Stroke="Transparent" StrokeThickness="1" RadiusX="8" RadiusY="8"/>
-        
-        <!-- Bottom Cover: Hides the 1px toolbar border when active -->
         <Rectangle x:Name="BottomCover" Fill="{ThemeResource LayerFillColorDefaultBrush}" Height="2" VerticalAlignment="Bottom" Visibility="Collapsed"/>
 
         <Grid Padding="10,0" ColumnSpacing="8">
@@ -42,7 +43,7 @@
             <Button Grid.Column="1" x:Name="CloseButton" Click="CloseButton_Click" 
                     Width="20" Height="20" MinWidth="20" MinHeight="20" 
                     Padding="0" CornerRadius="4" Background="Transparent" BorderThickness="0"
-                    VerticalAlignment="Center">
+                    VerticalAlignment="Center" Visibility="Collapsed">
                 <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
             </Button>
         </Grid>
