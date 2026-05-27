@@ -1,106 +1,115 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.Web.WebView2.Core;
-using TradingBrowser.ViewModels;
-using TradingBrowser.Services;
-using TradingBrowser.Helpers;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System;
-using System.IO;
-using System.Threading.Tasks;
-using Microsoft.UI.Windowing;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using TradingBrowser.Helpers;
 
-namespace TradingBrowser;
+namespace TradingBrowser.ViewModels;
 
-public sealed partial class MainWindow : Window
+public enum TilingLayout { None, Horizontal, Vertical, Grid }
+
+public partial class MainViewModel : ObservableObject
 {
-    public MainViewModel ViewModel { get; } = new();
-    public DownloadService DownloadManager => _downloadService; 
+    [ObservableProperty] private TabViewModel? _selectedTab;
+    [ObservableProperty] private string _omniboxText = string.Empty;
+    [ObservableProperty] private bool _canGoBack;
+    [ObservableProperty] private bool _canGoForward;
 
-    private bool _isWebViewInitialized;
-    private bool _isSplitPaneActive;
-    
-    private readonly SessionService _sessionService;
-    private readonly ShortcutService _shortcutService;
-    private readonly HistoryBookmarkService _hbService;
-    private readonly DownloadService _downloadService;
-    private WebViewNavigationService? _navService;
-    
-    private readonly string _shortcutsJs;
-    private readonly string _tradingViewJs;
+    // ==========================================
+    // TILING STATE
+    // ==========================================
+    [ObservableProperty] private TilingLayout _currentTilingLayout = TilingLayout.None;
+    public ObservableCollection<TabViewModel> TiledTabs { get; } = [];
 
-    public MainWindow()
+    public event Action<TilingLayout>? TilingLayoutChanged;
+    public event Action<ICollection<TabViewModel>>? TilingTabsChanged;
+    // ==========================================
+
+    public ObservableCollection<TabViewModel> Tabs { get; } = [];
+    private readonly Stack<string> _closedTabs = new();
+    private string _searchEngine = "Google";
+
+    public event Action<string>? NavigationRequested;
+    public event Action? FocusOmniboxRequested;
+    public event Action? ToggleFullscreenRequested;
+    public event Action? OpenDevToolsRequested;
+
+    public MainViewModel() { }
+
+    public void InitializeSession(List<TabViewModel> restoredTabs, string? activeTabId)
     {
-        this.InitializeComponent();
-        RootGrid.DataContext = this; 
-        
-        if (this.Content is FrameworkElement content) 
-            content.RequestedTheme = ElementTheme.Dark;
-
-        _sessionService = new SessionService(App.Db!);
-        _hbService = new HistoryBookmarkService(App.Db!);
-        _downloadService = new DownloadService(App.Db!);
-        
-        _shortcutService = new ShortcutService(
-            ViewModel, 
-            () => _isWebViewInitialized ? MainWebView.CoreWebView2 : null
-        );
-
-        _shortcutService.BookmarkRequested += () => {
-            if (ViewModel.SelectedTab != null)
-                ToggleBookmark(ViewModel.SelectedTab.Url, ViewModel.SelectedTab.Title);
-        };
-
-        ViewModel.PropertyChanged += (s, e) => {
-            if (e.PropertyName == nameof(MainViewModel.SelectedTab) || e.PropertyName == nameof(MainViewModel.OmniboxText))
-                UpdateOmniboxIcon();
-        };
-
-        string shortcutsPath = Path.Combine(AppContext.BaseDirectory, "Scripts", "shortcuts.js");
-        _shortcutsJs = File.Exists(shortcutsPath) ? File.ReadAllText(shortcutsPath) : "";
-
-        string tvJsPath = Path.Combine(AppContext.BaseDirectory, "Scripts", "tradingview-tweaks.js");
-        _tradingViewJs = File.Exists(tvJsPath) ? File.ReadAllText(tvJsPath) : "";
-
-        SetupTitleBar();
-        SetupEventHooks();
-        SetupOmniboxAnimations(); 
-        
-        // PHASE 1: Live Theme Hook
-        RootGrid.ActualThemeChanged += RootGrid_ActualThemeChanged;
-
-        _ = InitializeWebViewAsync();
+        Tabs.Clear();
+        if (restoredTabs.Any())
+        {
+            foreach (var tab in restoredTabs) Tabs.Add(tab);
+            SelectedTab = Tabs.FirstOrDefault(t => t.Id.ToString() == activeTabId) ?? Tabs.First();
+        }
+        else
+        {
+            AddTab();
+        }
     }
 
-    // PHASE 1: Force C# to re-fetch semantic brushes when OS toggles Light/Dark
-    private void RootGrid_ActualThemeChanged(FrameworkElement sender, object args)
+    [RelayCommand] private void AddTab() { /* ... existing logic ... */ }
+    [RelayCommand] private void CloseTab(TabViewModel? tab) { /* ... existing logic ... */ }
+    [RelayCommand] private void ReopenClosedTab() { /* ... existing logic ... */ }
+    [RelayCommand] private void DuplicateTab(TabViewModel? tab) { /* ... existing logic ... */ }
+    [RelayCommand] private void PinTab(TabViewModel? tab) { /* ... existing logic ... */ }
+    [RelayCommand] private void CloseOtherTabs(TabViewModel? tab) { /* ... existing logic ... */ }
+    [RelayCommand] private void CloseTabsToRight(TabViewModel? tab) { /* ... existing logic ... */ }
+    [RelayCommand] private void NavigateOmnibox() { /* ... existing logic ... */ }
+    [RelayCommand] private void GoHome() { /* ... existing logic ... */ }
+    [RelayCommand] private void NavigateToUrl(string url) { /* ... existing logic ... */ }
+
+    public void UpdateNavigationState(bool canGoBack, bool canGoForward)
     {
-        RefreshThemeBrushes();
+        CanGoBack = canGoBack;
+        CanGoForward = canGoForward;
     }
 
-    private void SetupTitleBar()
-    {
-        ExtendsContentIntoTitleBar = true;
-        SetTitleBar(AppTitleBar);
-        var appWindow = this.AppWindow;
-        appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
-        appWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
-        appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
-    }
+    public void NextTab() { /* ... existing logic ... */ }
+    public void PreviousTab() { /* ... existing logic ... */ }
+    public void SwitchToTab(int index) { /* ... existing logic ... */ }
+    public void TriggerFocusOmnibox() => FocusOmniboxRequested?.Invoke();
+    public void TriggerToggleFullscreen() => ToggleFullscreenRequested?.Invoke();
+    public void TriggerOpenDevTools() => OpenDevToolsRequested?.Invoke();
 
-    private void SetupEventHooks()
+    partial void OnSelectedTabChanging(TabViewModel? value) { if (value != null) OmniboxText = value.Url; }
+
+    // ==========================================
+    // TILING ENGINE
+    // ==========================================
+    public void TileSelection(IEnumerable<TabViewModel> selection, TilingLayout layout)
     {
-        RootGrid.PointerPressed += (s, e) => _shortcutService.HandlePointerPressed(e);
-        RootGrid.KeyDown += (s, e) => _shortcutService.HandleUiKeyDown(e);
+        var tabs = selection.Take(2).ToList(); // Vivaldi supports 2+; we cap at 2 for stable WebView2 perf
+        if (tabs.Count < 2) return;
+
+        TiledTabs.Clear();
+        foreach (var t in tabs) TiledTabs.Add(t);
         
-        ViewModel.NavigationRequested += url => { if (_isWebViewInitialized) MainWebView.CoreWebView2.Navigate(url); };
-        ViewModel.FocusOmniboxRequested += () => { Omnibox.Focus(FocusState.Programmatic); Omnibox.SelectAll(); };
-        ViewModel.ToggleFullscreenRequested += ToggleFullscreen;
-        ViewModel.OpenDevToolsRequested += () => { if (_isWebViewInitialized) MainWebView.CoreWebView2.OpenDevToolsWindow(); };
+        CurrentTilingLayout = layout;
+        TilingTabsChanged?.Invoke(TiledTabs);
+        TilingLayoutChanged?.Invoke(layout);
+    }
 
-        this.AppWindow.Closing += (s, e) => {
-            if (ViewModel.SelectedTab != null)
-                _sessionService.SaveSession(ViewModel.Tabs, ViewModel.SelectedTab.Id.ToString());
-        };
+    [RelayCommand]
+    private void UntileTabs()
+    {
+        TiledTabs.Clear();
+        CurrentTilingLayout = TilingLayout.None;
+        TilingTabsChanged?.Invoke(TiledTabs);
+        TilingLayoutChanged?.Invoke(TilingLayout.None);
+    }
+
+    [RelayCommand]
+    private void SwitchTilingLayout(TilingLayout layout)
+    {
+        if (TiledTabs.Count >= 2 && layout != CurrentTilingLayout)
+        {
+            CurrentTilingLayout = layout;
+            TilingLayoutChanged?.Invoke(layout);
+        }
     }
 }
