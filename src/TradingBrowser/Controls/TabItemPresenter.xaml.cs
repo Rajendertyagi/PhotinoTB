@@ -19,30 +19,53 @@ public sealed partial class TabItemPresenter : UserControl
 
     public event EventHandler<PointerRoutedEventArgs>? MiddleClicked;
     public event EventHandler<RoutedEventArgs>? CloseClicked;
-    public event EventHandler<RightTappedRoutedEventArgs>? TabRightTapped;
+    
+    // ✅ FIX: ContextRequestedEventArgs forces the OS to yield the right-click to XAML
+    public event EventHandler<ContextRequestedEventArgs>? TabContextRequested; 
 
     public TabItemPresenter() => this.InitializeComponent();
 
     // ✅ FIX: Bulletproof active state styling via direct property assignment
     private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is TabItemPresenter p)
+        if (d is TabItemPresenter p && p.IsLoaded)
         {
-            if (p.IsActive)
-            {
-                p.TabBackground.Fill = (Brush)Application.Current.Resources["LayerFillColorDefaultBrush"];
-                p.TabBackground.Stroke = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"];
-                p.BottomCover.Visibility = Visibility.Visible;
-                p.CloseButton.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                p.TabBackground.Fill = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                p.TabBackground.Stroke = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                p.BottomCover.Visibility = Visibility.Collapsed;
-                p.CloseButton.Visibility = Visibility.Collapsed;
-            }
+            p.ApplyActiveState();
         }
+    }
+
+    private void TabItemPresenter_Loaded(object sender, RoutedEventArgs e)
+    {
+        ApplyActiveState();
+    }
+
+    private void ApplyActiveState()
+    {
+        if (IsActive)
+        {
+            TabBackground.Fill = (Brush)Application.Current.Resources["LayerFillColorDefaultBrush"];
+            TabBackground.Stroke = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"];
+            BottomCover.Visibility = Visibility.Visible;
+            CloseButton.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            TabBackground.Fill = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            TabBackground.Stroke = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            BottomCover.Visibility = Visibility.Collapsed;
+            CloseButton.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    // ✅ FIX: Explicit hover logic (VisualStateManager fails inside ListView templates)
+    private void RootGrid_PointerEntered(object sender, PointerRoutedEventArgs e) 
+    { 
+        CloseButton.Visibility = Visibility.Visible; 
+    }
+
+    private void RootGrid_PointerExited(object sender, PointerRoutedEventArgs e) 
+    { 
+        if (!IsActive) CloseButton.Visibility = Visibility.Collapsed; 
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => CloseClicked?.Invoke(this, e);
@@ -57,11 +80,10 @@ public sealed partial class TabItemPresenter : UserControl
         }
     }
 
-    // ✅ FIX: Override at UserControl level to bypass ListView event swallowing
-    protected override void OnRightTapped(RightTappedRoutedEventArgs e)
+    // ✅ FIX: ContextRequested blocks the default Windows "Move/Size" system menu
+    private void RootGrid_ContextRequested(UIElement sender, ContextRequestedEventArgs args)
     {
-        base.OnRightTapped(e);
-        TabRightTapped?.Invoke(this, e);
-        e.Handled = true;
+        TabContextRequested?.Invoke(this, args);
+        args.Handled = true; 
     }
 }
