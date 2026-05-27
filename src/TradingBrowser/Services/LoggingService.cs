@@ -23,7 +23,9 @@ public static class LoggingService
 
     public static void Log(string message) => WriteLog("INFO", message);
     
-    // FIX: Added 2-argument overload to fix CS1501 in MainWindow.WebView.cs
+    // FIX: Added (string, string) overload to match MainWindow.WebView.cs calls
+    public static void Log(string message, string details) => WriteLog("INFO", $"{message} | {details}");
+    
     public static void Log(string message, Exception ex) => WriteLog("ERROR", $"{message} {ex}");
     
     public static void Info(string message) => WriteLog("INFO", message);
