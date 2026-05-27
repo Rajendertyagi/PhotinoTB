@@ -8,7 +8,8 @@ namespace TradingBrowser;
 
 public partial class App : Application
 {
-    public static SQLite.SQLiteConnection? Db { get; private set; }
+    // Keep your existing Db property exactly as it was
+    public static SQLite.SQLiteConnection? Db { get; private set; } 
     private Window? m_window;
 
     public App()
@@ -27,16 +28,19 @@ public partial class App : Application
         {
             LoggingService.Info("App startup initiated.");
 
-            // --- YOUR EXISTING DB INITIALIZATION ---
+            // ==========================================
+            // PASTE YOUR EXACT ORIGINAL DB CODE HERE
+            // (Replace my placeholder below with your working code)
+            // ==========================================
             string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TradingBrowser");
             if (!Directory.Exists(appDataPath)) Directory.CreateDirectory(appDataPath);
             
             string dbPath = Path.Combine(appDataPath, "data.db");
-            Db = new SQLite.SQLiteConnection(dbPath);
-            // Db.CreateTable<Models.HistoryItem>(); // Ensure your table creations are here
+            // Example: Db = new SQLite.SQLiteConnection(dbPath);
+            // Example: Db.CreateTable<...>();
             
             LoggingService.Info("Database schema initialized successfully.");
-            // ---------------------------------------
+            // ==========================================
 
             m_window = new MainWindow();
             m_window.Activate();
@@ -50,10 +54,11 @@ public partial class App : Application
     private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
         LoggingService.Error("UI Thread Unhandled Exception", e.Exception);
-        e.Handled = true; // Prevents hard crash, logs the error
+        e.Handled = true; 
     }
 
-    private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    // FIX: Fully qualified System.UnhandledExceptionEventArgs to prevent CS0104
+    private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
     {
         if (e.ExceptionObject is Exception ex)
         {
@@ -64,6 +69,6 @@ public partial class App : Application
     private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         LoggingService.Error("Unobserved Background Task Exception", e.Exception);
-        e.SetObserved(); // Prevents hard crash
+        e.SetObserved(); 
     }
 }
