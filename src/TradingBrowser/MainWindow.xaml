@@ -51,7 +51,6 @@
         
         <Grid x:Name="RootGrid" Background="Transparent" UseLayoutRounding="True">
             <Grid.Resources>
-                <!-- Edge Toolbar Button Style with 4px Corners -->
                 <Style x:Key="EdgeToolbarButtonStyle" TargetType="Button">
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="BorderThickness" Value="0"/>
@@ -99,14 +98,12 @@
                 </Style>
             </Grid.Resources>
 
-            <!-- Layout: TitleBar, Toolbar, WebViewHost -->
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/> 
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- ROW 0: Title Bar & Tab Strip -->
             <Grid Grid.Row="0" x:Name="AppTitleBar" Background="Transparent">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -137,7 +134,6 @@
                             </ItemsPanelTemplate>
                         </ListView.ItemsPanel>
 
-                        <!-- ✅ SILKY TRANSITIONS: 150ms Cubic-Bezier & Staggering -->
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0"/>
@@ -184,7 +180,6 @@
                 </Grid>
             </Grid>
 
-            <!-- ROW 1: Toolbar & Omnibox -->
             <Border Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="8,4">
                 <Grid ColumnSpacing="4">
                     <Grid.ColumnDefinitions>
@@ -210,7 +205,6 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- ✅ REFINED OMNIBOX: 28px Height, 6px Radius, Transparent by Default -->
                     <Border x:Name="OmniboxBorder" Grid.Column="2" 
                             Background="Transparent" 
                             CornerRadius="6" 
@@ -310,7 +304,6 @@
             </Border>
 
             <!-- ROW 2: Flexible Tiling Host -->
-            <!-- Default State: Single Column/Row -->
             <Grid Grid.Row="2" x:Name="TilingHost" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -328,7 +321,7 @@
                 <!-- Adaptive Divider -->
                 <primitives:Thumb x:Name="TilingDivider" Visibility="Collapsed" DragDelta="TilingDivider_DragDelta" Background="{ThemeResource DividerStrokeColorDefaultBrush}"/>
 
-                <!-- Layout Switcher Header (Appears when tiled) -->
+                <!-- Layout Switcher Header -->
                 <Border x:Name="TilingHeader" Visibility="Collapsed" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="8" Padding="4" CornerRadius="6" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
                     <StackPanel Orientation="Horizontal" Spacing="2">
                         <Button Click="SwitchToHorizontal_Click" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Horizontal">
