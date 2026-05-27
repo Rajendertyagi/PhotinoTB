@@ -51,7 +51,6 @@
         
         <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" UseLayoutRounding="True">
             <Grid.Resources>
-                <!-- ✅ FEATURE B: RevealBrush Lighting (Hover Glow) -->
                 <Style x:Key="EdgeToolbarButtonStyle" TargetType="Button">
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="BorderThickness" Value="1"/>
@@ -175,6 +174,7 @@
 
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:TabViewModel">
+                                <!-- ✅ FIXED: All event handlers attached for right-click, middle-click, close -->
                                 <controls:TabItemPresenter 
                                     Title="{x:Bind Title, Mode=OneWay}"
                                     ContextRequested="Tab_ContextRequested"
@@ -219,7 +219,7 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Omnibox -->
+                    <!-- ✅ FIXED OMNIBOX: Text visibility and binding -->
                     <Border x:Name="OmniboxBorder" Grid.Column="2" 
                             Background="{ThemeResource ControlFillColorDefaultBrush}" 
                             CornerRadius="6" 
@@ -328,7 +328,6 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- ✅ CRITICAL FIX: DefaultBackgroundColor="Transparent" -->
                 <WebView2 x:Name="MainWebView" Grid.Row="0" Grid.Column="0" DefaultBackgroundColor="Transparent"/>
                 <WebView2 x:Name="SecondaryWebView" Visibility="Collapsed" DefaultBackgroundColor="Transparent"/>
                 
